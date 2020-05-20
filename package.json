@@ -1,0 +1,21 @@
+{
+  "name": "wasm_dealer",
+  "version": "1.0.0",
+  "description": "Experiments with Rust and Wasm in a JS work.",
+  "main": "index.js",
+  "author": "brianboyko <brian.boyko@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^14.0.4",
+    "typescript": "^3.9.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.2.3",
+    "jest": "^26.0.1",
+    "rimraf": "^3.0.2"
+  },
+  "scripts": {
+    "build": "rimraf ./lib && tsc",
+    "start": "yarn build && node lib/index"
+  }
+}
