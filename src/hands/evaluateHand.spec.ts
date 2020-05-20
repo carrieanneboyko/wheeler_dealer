@@ -1,6 +1,10 @@
 import Card from "../deck/Card";
-import { sortHand } from "./evaluateHand";
-
+import { sortHand, isInSequence } from "./evaluateHand";
+import SUITS from "../deck/suits";
+import RANKS from "../deck/ranks";
+const displayToCardIndex = (c: string): number => {
+  return SUITS.indexOf(c.charAt(1)) * 13 + RANKS.indexOf(c.charAt(0));
+};
 const displayHand = (hand: Card[]) => hand.map((card) => card.display);
 const numsToHand = (nums: number[]) => nums.map((i) => new Card(i));
 describe("sortHand", () => {
@@ -17,4 +21,18 @@ describe("sortHand", () => {
     sortHand(randomHand);
     expect(displayHand(randomHand)).toEqual(["K♣", "K♥", "T♥", "4♠", "3♥"]);
   });
+});
+
+describe(`isInSequence`, () => {
+  it("catches straights", () => {
+    expect(
+      isInSequence(
+        sortHand(
+          numsToHand(["3♦", "6♦", "4♠", "5♠", "7♠"].map(displayToCardIndex))
+        )
+      )
+    ).toBe(true);
+  });
+  // it('ignores wrap-around straights', () => {})
+  // it('false-negative wheels (by design)' () => {})
 });
