@@ -156,18 +156,23 @@ export const evaluateHand = (hand: Card[]): HandRanking => {
     };
   }
   // one pair and the default (because high card is handled above);
-  const kickers = Object.keys(catalog)
-    .map((k) => k.toString())
-    .filter((key: string) => catalog[parseInt(key, 10)] !== 2)
-    .map(parseInt);
+  const getPairCard = (): number => {
+    for (let key in catalog) {
+      if (catalog[key] === 2) {
+        return parseInt(key, 10);
+      }
+    }
+    throw new Error("Should never get here");
+  };
+  const pairCard = getPairCard();
   return {
     handRank: HandRanks.Pair,
     values: [
       ...hand
-        .filter((card: Card) => !kickers.includes(card.value))
+        .filter((card: Card) => card.value == pairCard)
         .map((card: Card) => card.value),
       ...hand
-        .filter((card: Card) => kickers.includes(card.value))
+        .filter((card: Card) => card.value !== pairCard)
         .map((card: Card) => card.value),
     ],
   };
