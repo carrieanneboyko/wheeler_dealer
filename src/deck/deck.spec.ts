@@ -1,4 +1,5 @@
-import DECK, { Card } from "./index";
+import DECK from "./index";
+import Card from "./Card";
 
 const EXPECTED_DISPLAY_DECK =
   "2♠ 3♠ 4♠ 5♠ 6♠ 7♠ 8♠ 9♠ T♠ J♠ Q♠ K♠ A♠ " +
