@@ -6,16 +6,20 @@
   "author": "brianboyko <brian.boyko@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^14.0.4",
+    "lodash": "^4.17.15",
     "typescript": "^3.9.3"
   },
   "devDependencies": {
+    "@types/node": "^14.0.4",
     "@types/jest": "^25.2.3",
+    "@types/lodash": "^4.14.152",
     "jest": "^26.0.1",
+    "ts-jest": "^26.0.0",
     "rimraf": "^3.0.2"
   },
   "scripts": {
     "build": "rimraf ./lib && tsc",
-    "start": "yarn build && node lib/index"
+    "start": "yarn build && node lib/index",
+    "test": "yarn jest --detectOpenHandles --colors"
   }
 }
