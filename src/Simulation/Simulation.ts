@@ -7,7 +7,7 @@ export class SingleSimulation {
   public hands: Card[][] = [];
   public board: Card[] = [];
   public deadCards: number[] = []; // make private after testing
-  public simulationResults: number[][] = [];
+  public simulationResults: number[][][] = [];
   constructor(initialHands?: Card[][]) {
     if (initialHands) {
       initialHands.forEach(this.addHand);
@@ -42,7 +42,7 @@ export class SingleSimulation {
         const onlyGame = new Game(this.hands.length);
         onlyGame.hands = this.hands;
         onlyGame.board = this.board;
-        this.simulationResults = onlyGame.showdown().equity;
+        this.simulationResults = [onlyGame.showdown().equity];
         return resolve(this);
       }
 
@@ -60,37 +60,36 @@ export class SingleSimulation {
       );
       let startTime = Date.now();
       let processedCombo = 0;
-      const progressBar = setInterval(() => {
-        const ratio = processedCombo / comboLength;
-        console.log(
-          `Processing: ${processedCombo}/${comboLength} ${Math.floor(
-            ratio * 100
-          )}%`
-        );
-      }, 1000);
+
       for (let combo of allPossibleCombinations) {
+        const simCards = combo.map((index: number) => remainingDeck[index]);
         const gameSim = new Game(this.hands.length);
         gameSim.hands = this.hands;
-        const simCards = combo.map((index: number) => remainingDeck[index]);
         gameSim.board = this.board.concat(simCards);
-        this.simulationResults = this.simulationResults.concat(
-          gameSim.showdown().equity
-        );
+        this.simulationResults.push(gameSim.showdown().equity);
         processedCombo += 1;
+        if (processedCombo % 50000 === 0) {
+          console.log(
+            `${Math.floor((processedCombo / comboLength) * 100)}% done in ${
+              Date.now() - startTime
+            }ms`
+          );
+        }
       }
       console.log(`Done in ${Date.now() - startTime}ms`);
-      clearInterval(progressBar);
       return resolve(this);
     });
   public calcEquity = async (): Promise<Record<number, number>> => {
     await this.simulateBoard();
     const rawResults: Record<number, number> = {};
-    for (const sim of this.simulationResults) {
-      const [player, oneHandEquity] = sim;
-      if (!rawResults[player]) {
-        rawResults[player] = 0;
+    for (const game of this.simulationResults) {
+      for (const simResult of game) {
+        const [player, oneHandEquity] = simResult;
+        if (!rawResults[player]) {
+          rawResults[player] = 0;
+        }
+        rawResults[player] += oneHandEquity;
       }
-      rawResults[player] += oneHandEquity;
     }
     const equities: Record<number, number> = {};
     for (const [player, multiHandEquities] of Object.entries(rawResults)) {
