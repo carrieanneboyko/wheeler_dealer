@@ -74,6 +74,21 @@ describe("class Game", () => {
       ]);
     });
   });
+  describe("equity", () => {
+    it("should calculate the equity", () => {
+      expect(testGame.equity).toEqual([[3, 1]]);
+    });
+    it("should calculate correctly for a split pot", () => {
+      const splitGame = new Game(3);
+      splitGame.hands = ["A♥ A♣", "K♦ K♠", "A♦ A♠"].map(formatHandFromString);
+      splitGame.board = formatHandFromString("3♠ Q♠ T♣ 9♥ 3♣");
+      splitGame.showdown();
+      expect(splitGame.equity).toEqual([
+        [0, 0.5],
+        [2, 0.5],
+      ]);
+    });
+  });
 });
 
 describe("chained operations", () => {

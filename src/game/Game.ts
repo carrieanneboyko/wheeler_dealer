@@ -72,4 +72,23 @@ export default class Game {
   }> {
     return this.handEvaluations;
   }
+  public get equity(): [number, number][] {
+    if (this.handEvaluations.length === 0) {
+      return [];
+    }
+    const winners = [this.handEvaluations[0]];
+    let cursor = 1;
+    while (
+      this.handEvaluations[cursor] !== undefined &&
+      isCandidateBetter(
+        this.handEvaluations[0].bestHand.evaluation,
+        this.handEvaluations[cursor].bestHand.evaluation
+      ) === 0
+    ) {
+      winners.push(this.handEvaluations[cursor]);
+      cursor += 1;
+    }
+    const eq = 1 / winners.length;
+    return winners.map((winner) => [winner.index, eq]);
+  }
 }
