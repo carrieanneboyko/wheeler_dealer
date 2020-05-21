@@ -1,6 +1,6 @@
-import SUITS from "../deck/suits";
-import RANKS from "../deck/ranks";
-import Card from "../deck/Card";
+import SUITS from "../Deck/suits";
+import RANKS from "../Deck/ranks";
+import Card from "../Deck/Card";
 import { sortHand } from "../hands/evaluateHand";
 
 // helpers

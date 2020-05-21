@@ -1,5 +1,5 @@
 import evaluateHand, { HandRanking } from "./evaluateHand";
-import Card from "../deck/Card";
+import Card from "../Deck/Card";
 import nChooseK from "../utils/nChooseK";
 
 const HOLDEM_COMBOS = nChooseK(7, 5);

@@ -1,9 +1,10 @@
-import STACKED_DECK from "../deck/stackedDeck";
+import STACKED_DECK from "../Deck/stackedDeck";
 import { formatHandFromString, displayHand } from "../utils/shorthand";
 import Game from "./Game";
 
 let testGame = new Game(8);
-
+let testGame2 = new Game(8);
+testGame2.deck = formatHandFromString(STACKED_DECK);
 describe("class Game", () => {
   describe("constructor", () => {
     it("should have eight players", () => {
@@ -72,5 +73,29 @@ describe("class Game", () => {
         { handRank: 1, values: [1, 1, 12, 10, 8] },
       ]);
     });
+  });
+});
+
+describe("chained operations", () => {
+  it("should should do all of the above in a chain", () => {
+    const result = testGame2
+      .dealPreflop()
+      .dealFlop()
+      .dealTurn()
+      .dealRiver()
+      .showdown().evaluations;
+    const bestToWorst = result.map((hand) => hand.index);
+    expect(bestToWorst).toEqual([3, 5, 4, 1, 0, 6, 7, 2]);
+    const evaluations = result.map((hand) => hand.bestHand.evaluation);
+    expect(evaluations).toEqual([
+      { handRank: 3, values: [1, 1, 1, 12, 10] },
+      { handRank: 2, values: [12, 12, 1, 1, 10] },
+      { handRank: 2, values: [10, 10, 1, 1, 12] },
+      { handRank: 2, values: [7, 7, 1, 1, 12] },
+      { handRank: 1, values: [1, 1, 12, 11, 10] },
+      { handRank: 1, values: [1, 1, 12, 10, 9] },
+      { handRank: 1, values: [1, 1, 12, 10, 9] },
+      { handRank: 1, values: [1, 1, 12, 10, 8] },
+    ]);
   });
 });

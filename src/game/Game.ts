@@ -1,5 +1,5 @@
-import Card from "../deck/Card";
-import { freshDeck } from "../deck";
+import Card from "../Deck/Card";
+import { freshDeck } from "../Deck";
 import { shuffler } from "../shuffler";
 import {
   findHandThatPlays,

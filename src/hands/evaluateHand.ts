@@ -1,5 +1,5 @@
 import isEqual from "lodash/isEqual";
-import Card from "../deck/Card";
+import Card from "../Deck/Card";
 
 export interface HandRanking {
   handRank: number;
