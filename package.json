@@ -21,6 +21,7 @@
   "scripts": {
     "build": "rimraf ./lib && tsc",
     "start": "yarn build && node lib/index",
-    "test": "yarn jest --detectOpenHandles --colors"
+    "test": "yarn jest --detectOpenHandles --colors",
+    "pretty": "yarn prettier --write src/**/*.{ts,js}"
   }
 }

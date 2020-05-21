@@ -1,19 +1,7 @@
-import SUITS from "../deck/suits";
-import RANKS from "../deck/ranks";
-import Card from "../deck/Card";
-import { evaluateHand, sortHand } from "./evaluateHand";
+import { evaluateHand } from "./evaluateHand";
 
 import { isCandidateBetter, findHandThatPlays } from "./compareHands";
-
-// helpers
-const displayToCardIndex = (c: string): number => {
-  return SUITS.indexOf(c.charAt(1)) * 13 + RANKS.indexOf(c.charAt(0));
-};
-const displayHand = (hand: Card[]) => hand.map((card) => card.display);
-const numsToHand = (nums: number[]) => nums.map((i) => new Card(i));
-
-const shortHand = (str: string): Card[] =>
-  sortHand(numsToHand(str.split(" ").map(displayToCardIndex)));
+import { displayHand, shortHand } from "../utils/shorthand";
 
 describe("isCandidateBetter", () => {
   it("returns -1 if the candidate does not beat the other card", () => {

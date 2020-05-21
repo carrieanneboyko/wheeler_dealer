@@ -1,4 +1,3 @@
-import Card from "../deck/Card";
 import {
   sortHand,
   isInSequence,
@@ -9,17 +8,8 @@ import {
   catalogHand,
   evaluateHand,
 } from "./evaluateHand";
-import DECK from "../deck";
-import SUITS from "../deck/suits";
-import RANKS from "../deck/ranks";
-const displayToCardIndex = (c: string): number => {
-  return SUITS.indexOf(c.charAt(1)) * 13 + RANKS.indexOf(c.charAt(0));
-};
-const displayHand = (hand: Card[]) => hand.map((card) => card.display);
-const numsToHand = (nums: number[]) => nums.map((i) => new Card(i));
 
-const shortHand = (str: string): Card[] =>
-  sortHand(numsToHand(str.split(" ").map(displayToCardIndex)));
+import { displayHand, shortHand, numsToHand } from "../utils/shorthand";
 
 describe("helper functions", () => {
   describe("sortHand", () => {
