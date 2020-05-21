@@ -57,7 +57,7 @@ describe("class Game", () => {
   });
   describe("public showdown()", () => {
     it("should evaluate the showdown", () => {
-      const result = testGame.showdown();
+      const result = testGame.showdown().evaluations;
       const bestToWorst = result.map((hand) => hand.index);
       expect(bestToWorst).toEqual([3, 5, 4, 1, 0, 6, 7, 2]);
       const evaluations = result.map((hand) => hand.bestHand.evaluation);

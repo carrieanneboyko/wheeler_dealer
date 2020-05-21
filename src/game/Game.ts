@@ -1,7 +1,11 @@
 import Card from "../deck/Card";
 import { freshDeck } from "../deck";
 import { shuffler } from "../shuffler";
-import { findHandThatPlays, isCandidateBetter } from "../hands/compareHands";
+import {
+  findHandThatPlays,
+  isCandidateBetter,
+  PlayedHand,
+} from "../hands/compareHands";
 
 // There are traditions in Holdem that you deal one card to each player before dealing
 // the second card to each player, and that you burn before dealing board cards.
@@ -12,6 +16,10 @@ export default class Game {
   public hands: Card[][];
   public board: Card[] = [];
   public deck: Card[] = shuffler<Card>(freshDeck());
+  public handEvaluations: Array<{
+    index: number;
+    bestHand: PlayedHand;
+  }> = [];
   constructor(public readonly numPlayers: number) {
     if (numPlayers > 22) {
       throw new Error(
@@ -35,17 +43,20 @@ export default class Game {
     for (let i = 0; i < this.numPlayers; i++) {
       this.hands[i] = this.dealTopCards(2);
     }
+    return this;
   };
   public dealFlop = () => {
     this.board = this.board.concat(this.dealTopCards(3));
+    return this;
   };
   public dealTurn = () => {
     this.board = this.board.concat(this.dealTopCards(1));
+    return this;
   };
   // same thing but for naming convention sake;
   public dealRiver = this.dealTurn;
   public showdown = () => {
-    const handEvaluations = this.hands
+    this.handEvaluations = this.hands
       .map((playerHand, index) => ({
         index,
         bestHand: findHandThatPlays(this.board, playerHand),
@@ -53,6 +64,12 @@ export default class Game {
       .sort((handA, handB) =>
         isCandidateBetter(handA.bestHand.evaluation, handB.bestHand.evaluation)
       );
-    return handEvaluations;
+    return this;
   };
+  public get evaluations(): Array<{
+    index: number;
+    bestHand: PlayedHand;
+  }> {
+    return this.handEvaluations;
+  }
 }

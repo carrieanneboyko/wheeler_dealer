@@ -25,7 +25,7 @@ export const isCandidateBetter = (
   return 0;
 };
 
-interface PlayedHand {
+export interface PlayedHand {
   playedHand: Card[];
   evaluation: HandRanking;
 }
