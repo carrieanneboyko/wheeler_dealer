@@ -52,7 +52,7 @@ export const parseHandFromString = (
  * The purpose of this is to record a 1 bit for each rank – duplicates are lost.
  * Really, we're just looking for straights here.
  */
-export const handRanksToBitwise = (handRanks: number[]): u16 => {
+export const countRanksBitwise = (handRanks: number[]): u16 => {
   let bitValue: u16 = 0;
   for (let card = 0; card < 5; card++) {
     const cardValue: u16 = 1 << handRanks[card];
@@ -77,7 +77,7 @@ export const handRanksToBitwise = (handRanks: number[]): u16 => {
  *   A    K    Q    J    T    9    8    7    6    5    4    3    2
  * to so so, we set an "offset" to the nibble of the rank,
  */
-export const countOfEachRank = (handRanks: number[]): float => {
+export const countDuplicatesBitwise = (handRanks: number[]): float => {
   let offset: float = 0;
   let value: float = 0;
   /*  A note on this for-loop. 
@@ -127,8 +127,8 @@ export const rankPokerHand = (
   ranks: number[],
   suits: number[]
 ): [string, number] => {
-  const btRanks = handRanksToBitwise(ranks);
-  const btCount = countOfEachRank(ranks) % 15;
+  const btRanks = countRanksBitwise(ranks);
+  const btCount = countDuplicatesBitwise(ranks) % 15;
   if (btCount !== 5) {
     return RANK_HASHTABLE[btCount];
   }
