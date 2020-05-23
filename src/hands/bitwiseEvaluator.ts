@@ -12,17 +12,15 @@ const hands = [
   "Full House",
 ];
 
-const A = 14;
-const K = 13;
-const Q = 12;
-const J = 11;
-const T = 10;
+type u16 = number;
+type float = number;
+
 const Rank = {
-  A,
-  K,
-  Q,
-  J,
-  T,
+  A: 14, // in binary: 0100 0000 0000 0000
+  K: 13, // 0100 0000 0000 0000
+  Q: 12,
+  J: 11,
+  T: 10,
   "9": 9,
   "8": 8,
   "7": 7,
@@ -32,6 +30,7 @@ const Rank = {
   "3": 3,
   "2": 2,
 };
+const { A, K, Q, J, T } = Rank;
 const Suit = {
   s: 1,
   c: 2,
@@ -48,37 +47,73 @@ const Suit = {
 
   |	: Bitwise OR -- Sets each bit to 1 if one of two bits is 1
 */
-//Calculates the Rank of a 5 card Poker hand using bit manipulations. See bitwiseEvaluator.spec.ts;
-export const handRanksToBitwise = (handRanks: number[]): number => {
-  let bitCalc: number = 0;
+// Calculates the Rank of a 5 card Poker hand using bit manipulations. See bitwiseEvaluator.spec.ts;
+// The purpose of this is to record a 1 bit for each rank – duplicates are lost.
+/**
+ *
+ * @param {number[]} handRanks
+ * @returns {}
+ */
+export const handRanksToBitwise = (handRanks: number[]): u16 => {
+  let bf: u16 = 0;
   for (let card = 0; card < 5; card++) {
     const cVal = 1 << handRanks[card];
-    bitCalc = bitCalc | cVal;
+    bf = bf | cVal;
   }
-  return bitCalc;
+  return bf;
 };
-export const displayIntAs16Bit = (x: number): string => {
-  const bitwise = x.toString(2).split("");
-  while (bitwise.length < 16) {
-    bitwise.unshift("0");
+/**
+ * Okay - this is where JS gets freaky. Javascript uses only 32 bit integers,
+ * but 64 bits to store floats.  Of them, 1 (Most significant bit) is used
+ * to store the sign, 11 are used to store exponentiation, and that leaves
+ * exactly 52 bits left...
+ * ... waaaaaaait a second...
+ * Now, the problem is that you can't use bitwise operators on floats in JS.
+ * Doing so would immediately convert it to an integer.
+ * You CAN however, use normal math including modulo and Math.pow()
+ *
+ * So it's possible to set a nibble for each of the 13 ranks...
+ * and assign a bit for each time one occurs.  Kings full of jacks, for example,
+ * can be represented as
+ * 0000 0111 0000 0011 0000 0000 0000 0000 0000 0000 0000 0000 0000
+ *   A    K    Q    J    T    9    8    7    6    5    4    3    2
+ * to so so, we set an "offset" to the nibble of the rank,
+ * @param {number[]} handRanks
+ * @returns {float}
+ */
+export const countOfEachRank = (handRanks: number[]): float => {
+  let offset: float = 0;
+  let value: float = 0;
+  /*  A note on this for-loop. 
+      offest will be 0 during the i === 0 phase. The left side then evaluates as
+      value = 0 * (NaN & 15) + 1;
+      but all NaNs are converted to 0 before any bitwise operation in JS ES5. -- According to the ES5 spec:
+      // https://es5.github.io/
+  */
+  for (
+    let i = -1, l = handRanks.length;
+    i < l;
+    i++,
+      // offsets for the correct rank. Equal to 1 << handRanks[i]*4, but we can't use bitwise operators on floats.
+      offset = Math.pow(2, handRanks[i] * 4)
+  ) {
+    // though value is a float, it's bits can still be manipulated via addition.
+    // (value/offset) bit shifts the desired nibble to the least significant bits (LSBs)
+    // & 15 (or (0xF)) "masks" the other bits so that they're not affected,
+    value += offset * (((value / offset) & 15) + 1);
   }
-  return `${bitwise.slice(0, 4).join("")} ${bitwise
-    .slice(4, 8)
-    .join("")} ${bitwise.slice(8, 12).join("")} ${bitwise.slice(12).join("")}`;
+  return value;
 };
-// function rankPokerHand(cardRanks, suitValues) {
-//   let v;
-//   let i;
-//   let o;
-//   // convert each card rank to bitwise, then "bitwise or" them together. AAQTT would be:
-//   let s =
-//     (1 << cardRanks[0]) |
-//     (1 << cardRanks[1]) |
-//     (1 << cardRanks[2]) |
-//     (1 << cardRanks[3]) |
-//     (1 << cardRanks[4]);
 
-//   for (i = -1, v = o = 0; i < 5; i++, o = Math.pow(2, cardRanks[i] * 4)) {
+// function rankPokerHand(cardRanks: number[], suitValues: number[]) {
+//   let countOfEachRank: bitField;
+//   let v = 0;
+//   let i;
+//   let o = 0;
+//   // convert each card rank to bitwise, then "bitwise or" them together. AAQTT would be:
+//   let s = handRanksToBitwise(cardRanks);
+
+//   for (let i = -1; i < 5; i++, o = Math.pow(2, cardRanks[i] * 4)) {
 //     v += o * (((v / o) & 15) + 1);
 //   }
 //   v = (v % 15) - (s / (s & -s) == 31 || s == 0x403c ? 3 : 1);
