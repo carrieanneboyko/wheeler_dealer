@@ -2,6 +2,8 @@ import {
   countRanksBitwise,
   countDuplicatesBitwise,
   parseHandFromString,
+  Suit,
+  rankPokerHand,
 } from "./bitwiseEvaluator";
 
 const A = 14;
@@ -30,7 +32,7 @@ export const displayFloatAs64Bit = (x: number): string => {
     .replace(/(^\s+|\s+$)/, "");
 };
 
-describe.only("bitwiseEvaluator", () => {
+describe("bitwiseEvaluator", () => {
   describe("countRanksBitwise()", () => {
     it("converts hand ranks to bitwise values", () => {
       const broadway = [A, K, Q, J, T];
@@ -87,5 +89,64 @@ describe.only("bitwiseEvaluator", () => {
         [4, 4, 4, 4, 4],
       ]);
     });
+  });
+});
+
+describe("rank poker hand", () => {
+  it("puts it all together", () => {
+    const royal = "As Ks Qs Js Ts";
+    const straightFlush = "4s 5s 7s 6s 3s";
+    const steelWheel = "Ah 3h 5h 4h 2h";
+    const quads = "Jh Jc Jd Js 2h";
+    const boat = "8h 8c 8d 9s 9h";
+    const flush = "Ah Kh 9h 3h 2h";
+    const straight = "4s 5c 7d 6s 3s";
+    const wheel = "2s As 4s 3s 5d";
+    const trips = "Ts Tc Td 4s Ad";
+    const twoPair = "8s 8d Jc 9s 9d";
+    const onePair = "6s 6d As Kd Jd";
+    const highCard = "Ks Js 9s 7s 6d";
+    expect(rankPokerHand(...parseHandFromString(royal))).toEqual([
+      `Royal Flush`,
+      9,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(straightFlush))).toEqual([
+      `Straight Flush`,
+      8,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(steelWheel))).toEqual([
+      `Straight Flush`,
+      8,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(quads))).toEqual([
+      `Four of a Kind`,
+      7,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(boat))).toEqual([
+      `Full House`,
+      6,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(flush))).toEqual([`Flush`, 5]);
+    expect(rankPokerHand(...parseHandFromString(straight))).toEqual([
+      `Straight`,
+      4,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(wheel))).toEqual([
+      `Straight`,
+      4,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(trips))).toEqual([
+      `Three of a Kind`,
+      3,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(twoPair))).toEqual([
+      `Two Pair`,
+      2,
+    ]);
+    expect(rankPokerHand(...parseHandFromString(onePair))).toEqual([`Pair`, 1]);
+    expect(rankPokerHand(...parseHandFromString(highCard))).toEqual([
+      `High Card`,
+      0,
+    ]);
   });
 });

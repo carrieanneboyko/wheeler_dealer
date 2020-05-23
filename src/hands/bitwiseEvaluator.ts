@@ -6,7 +6,7 @@ type float = number;
 /* Significantly based on https://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math */
 /* but written with actual variable names instead of incomprehensible gibberish. */
 
-const Rank: Record<string, number> = {
+export const Rank: Record<string, number> = {
   A: 14, // in binary: 0100 0000 0000 0000
   K: 13, // 0100 0000 0000 0000
   Q: 12,
@@ -21,7 +21,7 @@ const Rank: Record<string, number> = {
   "3": 3,
   "2": 2,
 };
-const Suit: Record<string, number> = {
+export const Suit: Record<string, number> = {
   s: 1,
   c: 2,
   h: 4,
@@ -31,7 +31,7 @@ const Suit: Record<string, number> = {
 export const parseHandFromString = (
   handNotation: string
 ): [number[], number[]] => {
-  const cards = handNotation.split(" ");
+  const cards = handNotation.trim().split(" ");
   const ranks = cards.map((c) => Rank[c.charAt(0)]);
   const suits = cards.map((c) => Suit[c.charAt(1).toLowerCase()]);
   return [ranks, suits];
