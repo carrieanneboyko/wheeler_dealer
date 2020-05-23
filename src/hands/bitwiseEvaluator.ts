@@ -51,8 +51,6 @@ export const parseHandFromString = (
  * Calculates the Rank of a 5 card Poker hand using bit manipulations. See bitwiseEvaluator.spec.ts;
  * The purpose of this is to record a 1 bit for each rank – duplicates are lost.
  * Really, we're just looking for straights here.
- * @param {number[]} handRanks
- * @returns {}
  */
 export const handRanksToBitwise = (handRanks: number[]): u16 => {
   let bitValue: u16 = 0;
@@ -104,7 +102,7 @@ export const countOfEachRank = (handRanks: number[]): float => {
 };
 
 /**
- * (bitwiseCount % 15) sums all the nibbles in the bitwiseCount.
+ * (btCount % 15) sums all the nibbles in the btCount.
  * regardless of *which* cards you have, the operation returns the *same* value based on the
  * unique count of card ranks.
  * high card is 0001 + 0001 + 0001 + 0001 + 0001 (+ 7x0000) = 5;
@@ -115,9 +113,6 @@ export const countOfEachRank = (handRanks: number[]): float => {
  * and four of a kind will be 1111 + 0001 = 16... but modulo 15, that becomes a 1.
  * lets ignore straights and flushes for now.
  * what's really cool about this is that with a little tweaking, this will also work with 7-card hands.
- * @param {u16} bitwiseRanks -- the output of HandRanks to Bitwise
- * @param {float} bitwiseCount -- the output of countOfEachRank
- * @return {unknown}
  */
 const WHEEL = 0x403c; // 0100 0000 0011 1100
 const BROADWAY = 0x7c00; // 0111 1100 0000 0000
@@ -129,36 +124,28 @@ const RANK_HASHTABLE: Record<number, [string, number]> = {
   10: ["Full House", 6],
 };
 export const rankPokerHand = (
-  rankValues: number[],
-  suitValues: number[]
+  ranks: number[],
+  suits: number[]
 ): [string, number] => {
-  const bitwiseRanks = handRanksToBitwise(rankValues);
-  const bitwiseCount = countOfEachRank(rankValues) % 15;
-  // if bitwiseCount === 5, there are no duplicates, so it's either a high card, straight, flush, or straight flush.
-  if (bitwiseCount === 5) {
-    const isStraight =
-      bitwiseRanks / (bitwiseRanks & -bitwiseRanks) == 31 ||
-      bitwiseRanks === WHEEL;
-    const isFlush =
-      suitValues[0] ===
-      (suitValues[1] | suitValues[2] | suitValues[3] | suitValues[4]); // are all the same.
-
-    const isStraightFlush = isStraight && isFlush;
-    const isRoyalFlush = isStraightFlush && bitwiseRanks === BROADWAY;
-    if (isRoyalFlush) {
-      return ["Royal Flush", 9];
-    }
-    if (isStraightFlush) {
-      return ["Straight Flush", 8];
-    }
-    if (isFlush) {
-      return ["Flush", 5];
-    }
-    if (isStraight) {
-      return ["Straight", 4];
-    }
-    return ["High Card", 0];
-  } else {
-    return RANK_HASHTABLE[bitwiseCount];
+  const btRanks = handRanksToBitwise(ranks);
+  const btCount = countOfEachRank(ranks) % 15;
+  if (btCount !== 5) {
+    return RANK_HASHTABLE[btCount];
   }
+  // if btCount === 5, there are no duplicates, so it's either a high card, straight, flush, or straight flush.
+  const isStraight = btRanks / (btRanks & -btRanks) == 31 || btRanks === WHEEL; // checks if there are 5 consecutive 1s
+  const isFlush = suits[0] === (suits[1] | suits[2] | suits[3] | suits[4]); // are all the same.
+  if (isFlush && btRanks === BROADWAY) {
+    return ["Royal Flush", 9];
+  }
+  if (isStraight && isFlush) {
+    return ["Straight Flush", 8];
+  }
+  if (isFlush) {
+    return ["Flush", 5];
+  }
+  if (isStraight) {
+    return ["Straight", 4];
+  }
+  return ["High Card", 0];
 };
