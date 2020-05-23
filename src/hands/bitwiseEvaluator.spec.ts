@@ -2,7 +2,6 @@ import {
   countRanksBitwise,
   countDuplicatesBitwise,
   parseHandFromString,
-  Suit,
   rankPokerHand,
 } from "./bitwiseEvaluator";
 
