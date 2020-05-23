@@ -33,6 +33,10 @@ describe.only("bitwiseEvaluator", () => {
       expect(displayIntAs16Bit(handRanksToBitwise(broadway))).toBe(
         "0111 1100 0000 0000"
       );
+      const wheel = [A, 2, 3, 4, 5];
+      expect(displayIntAs16Bit(handRanksToBitwise(wheel))).toBe(
+        "0100 0000 0011 1100"
+      );
       const twoPair = [8, 8, J, 9, 9];
       expect(displayIntAs16Bit(handRanksToBitwise(twoPair))).toBe(
         "0000 1011 0000 0000"
@@ -42,10 +46,10 @@ describe.only("bitwiseEvaluator", () => {
   describe("countOfEachHandRank", () => {
     it("magically counts each rank", () => {
       const broadway = [A, K, Q, J, T];
-      const twoPair = [8, 8, J, 9, 9];
       expect(displayFloatAs64Bit(countOfEachRank(broadway))).toBe(
         "0000 0001 0001 0001 0001 0001 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
       );
+      const twoPair = [8, 8, J, 9, 9];
       expect(displayFloatAs64Bit(countOfEachRank(twoPair))).toBe(
         "0000 0000 0000 0000 0001 0000 0011 0011 0000 0000 0000 0000 0000 0000 0000 0000"
       );
