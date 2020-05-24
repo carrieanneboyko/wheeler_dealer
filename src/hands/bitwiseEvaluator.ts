@@ -199,34 +199,35 @@ const simplifyComplexHands = (
   handRank: HandRank,
   ranks: number[]
 ): number[] => {
-  ranks.sort((a, b) => a - b);
+  ranks.sort((a, b) => a - b); // some hands can only be determined by sorting first.
   if (handRank === HandRank.quads) {
     const quadVal = ranks[2]; // logically, arr 1, 2, 3 must be 3 of the 4.
-    const kickerVal = ranks[0] !== quadVal ? ranks[0] : ranks[4];
+    const kickerVal = ranks[0] !== quadVal ? ranks[0] : ranks[4]; // the kicker is either card 1 or card 5.
     return [quadVal, kickerVal];
   }
 
   if (handRank === HandRank.fullHouse) {
-    const trips = ranks[2];
+    const trips = ranks[2]; // logically, the 3rd card must be in the trips.
     const pair = ranks[3] === trips ? ranks[1] : ranks[3];
     return [trips, pair];
   }
 
   if (handRank === HandRank.trips) {
-    const trips = ranks[2];
+    const trips = ranks[2]; // logically, the 3rd card must be in the trips.
     const kickers = ranks.filter((rank) => rank !== trips);
     return [trips, ...kickers];
   }
   if (handRank === HandRank.twoPair) {
-    const highPair = ranks[1];
-    const lowPair = ranks[3];
+    const highPair = ranks[1]; // logically, the higher pair must be either (1, 2) or (2, 3);
+    const lowPair = ranks[3]; // logically, the lower pair must be either (3, 4) or (4, 5);
     const kicker = ranks.find((r) => r !== highPair && r !== lowPair) as number;
     return [highPair, lowPair, kicker];
   }
 
   if (handRank === HandRank.pair) {
     const pairFinder = (sortedRanks: number[]) => {
-      for (let i = 0; i < 5; i++) {
+      // since the values are sorted, the pairs should be together.
+      for (let i = 1; i < 5; i++) {
         if (sortedRanks[i - 1] === sortedRanks[i]) {
           return sortedRanks[i];
         }
@@ -243,28 +244,53 @@ const simplifyComplexHands = (
 };
 
 export const compareHands = (handA: string, handB: string): number => {
+  /**
+   * Returns positive number if hand A is stronger, negative number if hand B is stronger.
+   * Returns 0 on a tie.
+   */
   const [aRanks, aSuits] = parseHandFromString(handA);
   const [bRanks, bSuits] = parseHandFromString(handB);
   const a = rankPokerHand(aRanks, aSuits);
   const b = rankPokerHand(bRanks, bSuits);
+  // easy if the hand ranks don't match.
   if (a.handRank !== b.handRank) {
     return a.handRank - b.handRank;
   }
-  // fallthrough is deliberate;
-  switch (a.handRank) {
-    case HandRank.royalFlush: // all royal flushes tie each other
+  // all rfs tie each other.
+  if (a.handRank === HandRank.royalFlush) {
+    return 0;
+  }
+  // flushes and high cards will always have a higher bitwise value if they win.
+  if (a.handRank === HandRank.flush || a.handRank === HandRank.highCard) {
+    return a.btRanks - b.btRanks;
+  }
+  // so will MOST straight flushes & straights, except wheels/steel wheels.
+  if (
+    a.handRank === HandRank.straightFlush ||
+    a.handRank === HandRank.straight
+  ) {
+    // Wheels are a special case where the bitwise rank of the ace throws
+    // everything off and need to be checked seperately.
+    if (a.btRanks === WHEEL_HASH && b.btRanks === WHEEL_HASH) {
       return 0;
-    case HandRank.straightFlush:
-    case HandRank.flush:
-    case HandRank.straight:
-      return a.btRanks - b.btRanks; // highest cards will have highest values;
-  } // no default; case will fallthrough.
+    }
+    if (a.btRanks === WHEEL_HASH) {
+      return -1;
+    }
+    if (b.btRanks === WHEEL_HASH) {
+      return 1;
+    }
+    return a.btRanks - b.btRanks;
+  }
+
   const simpleA = simplifyComplexHands(a.handRank, aRanks);
   const simpleB = simplifyComplexHands(b.handRank, bRanks);
+  // we can't compare full houses, quads, etc. by hash, because hands such as "JJJAA" have a
+  // higher hash value than "KKKQQ". Unless someone can think of something clever...
   for (let i = 0, l = simpleA.length; i < l; i++) {
-    const comp = simpleA[i] - simpleB[i];
-    if (comp !== 0) {
-      return comp;
+    const valueArray = simpleA[i] - simpleB[i];
+    if (valueArray !== 0) {
+      return valueArray;
     }
   }
   return 0;

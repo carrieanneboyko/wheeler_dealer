@@ -3,6 +3,7 @@ import {
   countDuplicatesBitwise,
   parseHandFromString,
   rankPokerHand,
+  compareHands,
 } from "./bitwiseEvaluator";
 
 const A = 14;
@@ -177,5 +178,66 @@ describe("rank poker hand", () => {
       english: "High Card",
       handRank: 0,
     });
+  });
+});
+describe("compareHands", () => {
+  it("compares hands", () => {
+    const royal = "As Ks Qs Js Ts";
+    const straightFlush = "4s 5s 7s 6s 3s";
+    const steelWheel = "Ah 3h 5h 4h 2h";
+    const quads = "Jh Jc Jd Js 2h";
+    const boat = "8h 8c 8d 9s 9h";
+    const flush = "Ah Kh 9h 3h 2h";
+    const straight = "4s 5c 7d 6s 3s";
+    const wheel = "2s As 4s 3s 5d";
+    const trips = "Ts Tc Td 4s Ad";
+    const twoPair = "8s 8d Jc 9s 9d";
+    const onePair = "Ts Td As Kd Jd";
+    const highCard = "Ks Js 9s 7s 6d";
+    const exhaustive = [
+      royal,
+      straightFlush,
+      steelWheel,
+      quads,
+      boat,
+      flush,
+      straight,
+      wheel,
+      trips,
+      twoPair,
+      onePair,
+      highCard,
+    ];
+    for (let i = 0, l = exhaustive.length; i < l; i++) {
+      for (let j = 0; j < l; j++) {
+        if (i === j) {
+          const shouldBeZero = compareHands(exhaustive[i], exhaustive[j]);
+          if (shouldBeZero !== 0) {
+            console.error(
+              `should be zero: ${exhaustive[i]}, ${exhaustive[j]}, got ${shouldBeZero}`
+            );
+          }
+          expect(shouldBeZero).toBe(0);
+        }
+        if (i < j) {
+          const shouldBePositive = compareHands(exhaustive[i], exhaustive[j]);
+          if (shouldBePositive <= 0) {
+            console.error(
+              `should be positive: ${exhaustive[i]}, ${exhaustive[j]}, got ${shouldBePositive}`
+            );
+          }
+          expect(shouldBePositive).toBeGreaterThan(0);
+        }
+        if (i > j) {
+          const shouldBeNegative = compareHands(exhaustive[i], exhaustive[j]);
+          if (shouldBeNegative >= 0) {
+            console.error(
+              `should be negative: ${exhaustive[i]}, ${exhaustive[j]}, got ${shouldBeNegative}`
+            );
+          }
+          expect(shouldBeNegative).toBeLessThan(0);
+        }
+      }
+    }
   });
 });
