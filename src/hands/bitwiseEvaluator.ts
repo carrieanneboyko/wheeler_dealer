@@ -116,36 +116,70 @@ export const countDuplicatesBitwise = (handRanks: number[]): float => {
  */
 const WHEEL = 0x403c; // 0100 0000 0011 1100
 const BROADWAY = 0x7c00; // 0111 1100 0000 0000
-const RANK_HASHTABLE: Record<number, [string, number]> = {
-  1: ["Four of a Kind", 7],
-  6: ["Pair", 1],
-  7: ["Two Pair", 2],
-  9: ["Three of a Kind", 3],
-  10: ["Full House", 6],
+enum HandRank {
+  highCard = 0,
+  pair = 1,
+  twoPair = 2,
+  trips = 3,
+  straight = 4,
+  flush = 5,
+  fullHouse = 6,
+  quads = 7,
+  straightFlush = 8,
+  royalFlush = 9,
+}
+const POKER_HASH: Record<number | string, [string, HandRank]> = {
+  RF: ["Royal Flush", HandRank.royalFlush],
+  SF: ["Straight Flush", HandRank.straightFlush],
+  1: ["Four of a Kind", HandRank.quads],
+  10: ["Full House", HandRank.fullHouse],
+  F: ["Flush", HandRank.flush],
+  S: ["Straight", HandRank.straight],
+  9: ["Three of a Kind", HandRank.trips],
+  7: ["Two Pair", HandRank.twoPair],
+  6: ["Pair", HandRank.pair],
+  HC: ["High Card", HandRank.highCard],
 };
 export const rankPokerHand = (
   ranks: number[],
   suits: number[]
-): [string, number] => {
+): [string, HandRank] => {
   const btRanks = countRanksBitwise(ranks);
   const btCount = countDuplicatesBitwise(ranks) % 15;
   if (btCount !== 5) {
-    return RANK_HASHTABLE[btCount];
+    return POKER_HASH[btCount];
   }
   // if btCount === 5, there are no duplicates, so it's either a high card, straight, flush, or straight flush.
   const isStraight = btRanks / (btRanks & -btRanks) == 31 || btRanks === WHEEL; // checks if there are 5 consecutive 1s
   const isFlush = suits[0] === (suits[1] | suits[2] | suits[3] | suits[4]); // are all the same.
   if (isFlush && btRanks === BROADWAY) {
-    return ["Royal Flush", 9];
+    return POKER_HASH.RF;
   }
   if (isStraight && isFlush) {
-    return ["Straight Flush", 8];
+    return POKER_HASH.SF;
   }
   if (isFlush) {
-    return ["Flush", 5];
+    return POKER_HASH.F;
   }
   if (isStraight) {
-    return ["Straight", 4];
+    return POKER_HASH.S;
   }
-  return ["High Card", 0];
+  return POKER_HASH.HC;
+};
+
+/**
+ * returns a positive value if A is higher, a negative value if B is higher,
+ * and zero if they are the same.
+ */
+const compareHands = (handA: string, handB: string): number => {
+  const [aRanks, aSuits] = parseHandFromString(handA);
+  const [bRanks, bSuits] = parseHandFromString(handB);
+  const [_aEnglish, aHandrank] = rankPokerHand(aRanks, aSuits);
+  const [_bEnglish, bHandrank] = rankPokerHand(bRanks, bSuits);
+  if (aHandrank !== bHandrank) {
+    return aHandrank - bHandrank;
+  }
+  if ([9, 8, 5, 4].includes(aHandrank)) {
+    return countRanksBitwise(aRanks) - countRanksBitwise(bRanks);
+  }
 };
