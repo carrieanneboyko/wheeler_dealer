@@ -1,11 +1,26 @@
+/* Significantly based on https://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math */
+/* but written with variable names to be more readable. */
+
 type u16 = number;
 type float = number;
-
-// the array's index value matches to some bitwise math, this is why these hand rankings
-// are not in order of value. see below.
-/* Significantly based on https://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math */
-/* but written with actual variable names instead of incomprehensible gibberish. */
-
+interface HandAnalysis {
+  handRank: number;
+  english: string;
+  btRanks: number;
+  btCount: number;
+}
+enum HandRank {
+  highCard = 0,
+  pair = 1,
+  twoPair = 2,
+  trips = 3,
+  straight = 4,
+  flush = 5,
+  fullHouse = 6,
+  quads = 7,
+  straightFlush = 8,
+  royalFlush = 9,
+}
 export const Rank: Record<string, number> = {
   A: 14, // in binary: 0100 0000 0000 0000
   K: 13, // 0100 0000 0000 0000
@@ -27,6 +42,8 @@ export const Suit: Record<string, number> = {
   h: 4,
   d: 8,
 };
+const WHEEL_HASH = 0x403c; // 0100 0000 0011 1100
+const BROADWAY_HASH = 0x7c00; // 0111 1100 0000 0000
 
 export const parseHandFromString = (
   handNotation: string
@@ -37,20 +54,8 @@ export const parseHandFromString = (
   return [ranks, suits];
 };
 
-// Bitwise operators
-/* 
-  << : Zero fill left shift -- Shifts left by pushing zeros in from the right and let the leftmost bits fall off
-    // Effectively, 1 << x === Math.pow(2, x), in base 10, but what it's doing is converting the value of 
-    // the card to 16-bit binary. 
-    // so an ace (value 14) would be: 0100 0000 0000 0000, (15th bit is true) a 9 would be 0000 0010 0000 0000; (10th bit is true)
-
-  |	: Bitwise OR -- Sets each bit to 1 if one of two bits is 1
-*/
-
 /**
- * Calculates the Rank of a 5 card Poker hand using bit manipulations. See bitwiseEvaluator.spec.ts;
  * The purpose of this is to record a 1 bit for each rank – duplicates are lost.
- * Really, we're just looking for straights here.
  */
 export const countRanksBitwise = (handRanks: number[]): u16 => {
   let bitValue: u16 = 0;
@@ -65,10 +70,9 @@ export const countRanksBitwise = (handRanks: number[]): u16 => {
  * but 64 bits to store floats.  Of them, 1 (Most significant bit) is used
  * to store the sign, 11 are used to store exponentiation, and that leaves
  * exactly 52 bits left...
- * ... waaaaaaait a second...
  * Now, the problem is that you can't use bitwise operators on floats in JS.
  * Doing so would immediately convert it to an integer.
- * You CAN however, use normal math including modulo and Math.pow()
+ * You CAN however, use normal math including % and Math.pow()
  *
  * So it's possible to set a nibble for each of the 13 ranks...
  * and assign a bit for each time one occurs.  Kings full of jacks, for example,
@@ -114,20 +118,7 @@ export const countDuplicatesBitwise = (handRanks: number[]): float => {
  * lets ignore straights and flushes for now.
  * what's really cool about this is that with a little tweaking, this will also work with 7-card hands.
  */
-const WHEEL = 0x403c; // 0100 0000 0011 1100
-const BROADWAY = 0x7c00; // 0111 1100 0000 0000
-enum HandRank {
-  highCard = 0,
-  pair = 1,
-  twoPair = 2,
-  trips = 3,
-  straight = 4,
-  flush = 5,
-  fullHouse = 6,
-  quads = 7,
-  straightFlush = 8,
-  royalFlush = 9,
-}
+
 const POKER_HASH: Record<number | string, [string, HandRank]> = {
   RF: ["Royal Flush", HandRank.royalFlush],
   SF: ["Straight Flush", HandRank.straightFlush],
@@ -140,46 +131,141 @@ const POKER_HASH: Record<number | string, [string, HandRank]> = {
   6: ["Pair", HandRank.pair],
   HC: ["High Card", HandRank.highCard],
 };
+
 export const rankPokerHand = (
   ranks: number[],
   suits: number[]
-): [string, HandRank] => {
+): HandAnalysis => {
   const btRanks = countRanksBitwise(ranks);
   const btCount = countDuplicatesBitwise(ranks) % 15;
   if (btCount !== 5) {
-    return POKER_HASH[btCount];
+    return {
+      handRank: POKER_HASH[btCount][1],
+      english: POKER_HASH[btCount][0],
+      btRanks,
+      btCount,
+    };
   }
   // if btCount === 5, there are no duplicates, so it's either a high card, straight, flush, or straight flush.
-  const isStraight = btRanks / (btRanks & -btRanks) == 31 || btRanks === WHEEL; // checks if there are 5 consecutive 1s
+  const isStraight =
+    btRanks / (btRanks & -btRanks) == 31 || btRanks === WHEEL_HASH; // checks if there are 5 consecutive 1s
   const isFlush = suits[0] === (suits[1] | suits[2] | suits[3] | suits[4]); // are all the same.
-  if (isFlush && btRanks === BROADWAY) {
-    return POKER_HASH.RF;
+  if (isFlush && btRanks === BROADWAY_HASH) {
+    return {
+      handRank: POKER_HASH.RF[1],
+      english: POKER_HASH.RF[0],
+      btRanks,
+      btCount,
+    };
   }
   if (isStraight && isFlush) {
-    return POKER_HASH.SF;
+    return {
+      handRank: POKER_HASH.SF[1],
+      english: POKER_HASH.SF[0],
+      btRanks,
+      btCount,
+    };
   }
   if (isFlush) {
-    return POKER_HASH.F;
+    return {
+      handRank: POKER_HASH.F[1],
+      english: POKER_HASH.F[0],
+      btRanks,
+      btCount,
+    };
   }
   if (isStraight) {
-    return POKER_HASH.S;
+    return {
+      handRank: POKER_HASH.S[1],
+      english: POKER_HASH.S[0],
+      btRanks,
+      btCount,
+    };
   }
-  return POKER_HASH.HC;
+  return {
+    handRank: POKER_HASH.HC[1],
+    english: POKER_HASH.HC[0],
+    btRanks,
+    btCount,
+  };
 };
 
 /**
  * returns a positive value if A is higher, a negative value if B is higher,
  * and zero if they are the same.
  */
-const compareHands = (handA: string, handB: string): number => {
+
+const simplifyComplexHands = (
+  handRank: HandRank,
+  ranks: number[]
+): number[] => {
+  ranks.sort((a, b) => a - b);
+  if (handRank === HandRank.quads) {
+    const quadVal = ranks[2]; // logically, arr 1, 2, 3 must be 3 of the 4.
+    const kickerVal = ranks[0] !== quadVal ? ranks[0] : ranks[4];
+    return [quadVal, kickerVal];
+  }
+
+  if (handRank === HandRank.fullHouse) {
+    const trips = ranks[2];
+    const pair = ranks[3] === trips ? ranks[1] : ranks[3];
+    return [trips, pair];
+  }
+
+  if (handRank === HandRank.trips) {
+    const trips = ranks[2];
+    const kickers = ranks.filter((rank) => rank !== trips);
+    return [trips, ...kickers];
+  }
+  if (handRank === HandRank.twoPair) {
+    const highPair = ranks[1];
+    const lowPair = ranks[3];
+    const kicker = ranks.find((r) => r !== highPair && r !== lowPair) as number;
+    return [highPair, lowPair, kicker];
+  }
+
+  if (handRank === HandRank.pair) {
+    const pairFinder = (sortedRanks: number[]) => {
+      for (let i = 0; i < 5; i++) {
+        if (sortedRanks[i - 1] === sortedRanks[i]) {
+          return sortedRanks[i];
+        }
+      }
+      throw new Error(
+        `Hand ranks ${ranks} was sent to simplifyPair but does not contain a pair`
+      );
+    };
+    const pair = pairFinder(ranks);
+    const kickers = ranks.filter((rank) => rank !== pair);
+    return [pair, ...kickers] as number[];
+  }
+  throw new Error(`Cannot simplify HandRank type ${handRank}`);
+};
+
+export const compareHands = (handA: string, handB: string): number => {
   const [aRanks, aSuits] = parseHandFromString(handA);
   const [bRanks, bSuits] = parseHandFromString(handB);
-  const [_aEnglish, aHandrank] = rankPokerHand(aRanks, aSuits);
-  const [_bEnglish, bHandrank] = rankPokerHand(bRanks, bSuits);
-  if (aHandrank !== bHandrank) {
-    return aHandrank - bHandrank;
+  const a = rankPokerHand(aRanks, aSuits);
+  const b = rankPokerHand(bRanks, bSuits);
+  if (a.handRank !== b.handRank) {
+    return a.handRank - b.handRank;
   }
-  if ([9, 8, 5, 4].includes(aHandrank)) {
-    return countRanksBitwise(aRanks) - countRanksBitwise(bRanks);
+  // fallthrough is deliberate;
+  switch (a.handRank) {
+    case HandRank.royalFlush: // all royal flushes tie each other
+      return 0;
+    case HandRank.straightFlush:
+    case HandRank.flush:
+    case HandRank.straight:
+      return a.btRanks - b.btRanks; // highest cards will have highest values;
+  } // no default; case will fallthrough.
+  const simpleA = simplifyComplexHands(a.handRank, aRanks);
+  const simpleB = simplifyComplexHands(b.handRank, bRanks);
+  for (let i = 0, l = simpleA.length; i < l; i++) {
+    const comp = simpleA[i] - simpleB[i];
+    if (comp !== 0) {
+      return comp;
+    }
   }
+  return 0;
 };

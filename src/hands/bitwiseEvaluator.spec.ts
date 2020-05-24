@@ -105,47 +105,77 @@ describe("rank poker hand", () => {
     const twoPair = "8s 8d Jc 9s 9d";
     const onePair = "6s 6d As Kd Jd";
     const highCard = "Ks Js 9s 7s 6d";
-    expect(rankPokerHand(...parseHandFromString(royal))).toEqual([
-      `Royal Flush`,
-      9,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(straightFlush))).toEqual([
-      `Straight Flush`,
-      8,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(steelWheel))).toEqual([
-      `Straight Flush`,
-      8,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(quads))).toEqual([
-      `Four of a Kind`,
-      7,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(boat))).toEqual([
-      `Full House`,
-      6,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(flush))).toEqual([`Flush`, 5]);
-    expect(rankPokerHand(...parseHandFromString(straight))).toEqual([
-      `Straight`,
-      4,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(wheel))).toEqual([
-      `Straight`,
-      4,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(trips))).toEqual([
-      `Three of a Kind`,
-      3,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(twoPair))).toEqual([
-      `Two Pair`,
-      2,
-    ]);
-    expect(rankPokerHand(...parseHandFromString(onePair))).toEqual([`Pair`, 1]);
-    expect(rankPokerHand(...parseHandFromString(highCard))).toEqual([
-      `High Card`,
-      0,
-    ]);
+    expect(rankPokerHand(...parseHandFromString(royal))).toEqual({
+      btCount: 5,
+      btRanks: 31744,
+      english: "Royal Flush",
+      handRank: 9,
+    });
+    expect(rankPokerHand(...parseHandFromString(straightFlush))).toEqual({
+      btCount: 5,
+      btRanks: 248,
+      english: "Straight Flush",
+      handRank: 8,
+    });
+    expect(rankPokerHand(...parseHandFromString(steelWheel))).toEqual({
+      btCount: 5,
+      btRanks: 16444,
+      english: "Straight Flush",
+      handRank: 8,
+    });
+    expect(rankPokerHand(...parseHandFromString(quads))).toEqual({
+      btCount: 1,
+      btRanks: 2052,
+      english: "Four of a Kind",
+      handRank: 7,
+    });
+    expect(rankPokerHand(...parseHandFromString(boat))).toEqual({
+      btCount: 10,
+      btRanks: 768,
+      english: "Full House",
+      handRank: 6,
+    });
+    expect(rankPokerHand(...parseHandFromString(flush))).toEqual({
+      btCount: 5,
+      btRanks: 25100,
+      english: "Flush",
+      handRank: 5,
+    });
+    expect(rankPokerHand(...parseHandFromString(straight))).toEqual({
+      btCount: 5,
+      btRanks: 248,
+      english: "Straight",
+      handRank: 4,
+    });
+    expect(rankPokerHand(...parseHandFromString(wheel))).toEqual({
+      btCount: 5,
+      btRanks: 16444,
+      english: "Straight",
+      handRank: 4,
+    });
+    expect(rankPokerHand(...parseHandFromString(trips))).toEqual({
+      btCount: 9,
+      btRanks: 17424,
+      english: "Three of a Kind",
+      handRank: 3,
+    });
+    expect(rankPokerHand(...parseHandFromString(twoPair))).toEqual({
+      btCount: 7,
+      btRanks: 2816,
+      english: "Two Pair",
+      handRank: 2,
+    });
+    expect(rankPokerHand(...parseHandFromString(onePair))).toEqual({
+      btCount: 6,
+      btRanks: 26688,
+      english: "Pair",
+      handRank: 1,
+    });
+    expect(rankPokerHand(...parseHandFromString(highCard))).toEqual({
+      btCount: 5,
+      btRanks: 10944,
+      english: "High Card",
+      handRank: 0,
+    });
   });
 });
