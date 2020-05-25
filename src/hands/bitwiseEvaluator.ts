@@ -45,6 +45,18 @@ export const Suit: Record<string, number> = {
 const WHEEL_HASH = 0x403c; // 0100 0000 0011 1100
 const BROADWAY_HASH = 0x7c00; // 0111 1100 0000 0000
 
+const displayBits = (bits = 16) => (x: number): string =>
+  x
+    .toString(2)
+    .split("")
+    .join("")
+    .padStart(bits, "0")
+    .replace(/(\d{4})/g, "$1 ")
+    .replace(/(^\s+|\s+$)/, "");
+
+export const displayIntAs16Bit = displayBits(16);
+export const displayFloatAs64Bit = displayBits(64);
+
 export const parseHandFromString = (
   handNotation: string
 ): [number[], number[]] => {
@@ -195,54 +207,111 @@ export const rankPokerHand = (
  * and zero if they are the same.
  */
 
-const simplifyComplexHands = (
-  handRank: HandRank,
-  ranks: number[]
-): number[] => {
-  ranks.sort((a, b) => b - a); // some hands can only be determined by sorting first, descending order
-  if (handRank === HandRank.quads) {
-    const quadVal = ranks[2]; // logically, arr 1, 2, 3 must be 3 of the 4.
-    const kickerVal = ranks[0] !== quadVal ? ranks[0] : ranks[4]; // the kicker is either card 1 or card 5.
-    return [quadVal, kickerVal];
+const analyzeQuads = (btRank: number): number[] => {
+  let quads: number = 0;
+  let kicker: number = 0;
+  let position = 0;
+  const stringRep: string = displayFloatAs64Bit(btRank);
+  const l = stringRep.length;
+  while ((quads === 0 || kicker === 0) && position < l) {
+    position += 5; // skips the first one.
+    if (stringRep.charAt(position) === "1") {
+      quads = 14 - position / 5;
+    } else if (stringRep.charAt(position + 3) === "1") {
+      kicker = 14 - position / 5;
+    }
   }
+  console.log(displayFloatAs64Bit(btRank));
+  console.log([quads, kicker]);
+  return [quads, kicker];
+};
+const analyzeBoat = (btRank: number): number[] => {
+  let trips: number = 0;
+  let pair: number = 0;
+  let position = 0;
+  const stringRep: string = displayFloatAs64Bit(btRank);
+  const l = stringRep.length;
+  while ((trips === 0 || pair === 0) && position < l) {
+    position += 5; // skips the first one.
+    if (stringRep.charAt(position + 1) === "1") {
+      trips = 14 - position / 5;
+    } else if (stringRep.charAt(position + 2) === "1") {
+      pair = 14 - position / 5;
+    }
+  }
+  return [trips, pair];
+};
 
-  if (handRank === HandRank.fullHouse) {
-    const trips = ranks[2]; // logically, the 3rd card must be in the trips.
-    const pair = ranks[3] === trips ? ranks[1] : ranks[3];
-    return [trips, pair];
+const analyzeTrips = (btRank: number): number[] => {
+  let trips: number = 0;
+  let kickers: number[] = [];
+  let position = 0;
+  const stringRep: string = displayFloatAs64Bit(btRank);
+  const l = stringRep.length;
+  while ((trips === 0 || kickers.length < 2) && position < l) {
+    position += 5; // skips the first one.
+    if (stringRep.charAt(position + 1) === "1") {
+      trips = 14 - position / 5;
+    } else if (stringRep.charAt(position + 3) === "1") {
+      kickers.push(14 - position / 5);
+    }
   }
+  return [trips, ...kickers];
+};
 
-  if (handRank === HandRank.trips) {
-    const trips = ranks[2]; // logically, the 3rd card must be in the trips.
-    const kickers = ranks.filter((rank) => rank !== trips);
-    return [trips, ...kickers];
+const analyzeTwoPair = (btRank: number): number[] => {
+  let pairs: number[] = [];
+  let kicker: number = 0;
+  let position = 0;
+  const stringRep: string = displayFloatAs64Bit(btRank);
+  const l = stringRep.length;
+  while (pairs.length < 2 && kicker === 0 && position < l) {
+    position += 5; // skips the first one.
+    if (stringRep.charAt(position + 2) === "1") {
+      pairs.push(14 - position / 5);
+    } else if (stringRep.charAt(position + 3) === "1") {
+      kicker = 14 - position / 5;
+    }
   }
-  if (handRank === HandRank.twoPair) {
-    const highPair = ranks[1]; // logically, the higher pair must be either (1, 2) or (2, 3);
-    const lowPair = ranks[3]; // logically, the lower pair must be either (3, 4) or (4, 5);
-    const kicker = ranks.find((r) => r !== highPair && r !== lowPair) as number;
-    return [highPair, lowPair, kicker];
-  }
+  return [...pairs, kicker];
+};
 
-  if (handRank === HandRank.pair) {
-    const pairFinder = (sortedRanks: number[]) => {
-      // since the values are sorted, the pairs should be together.
-      for (let i = 1; i < 5; i++) {
-        if (sortedRanks[i - 1] === sortedRanks[i]) {
-          return sortedRanks[i];
-        }
-      }
-      throw new Error(
-        `Hand ranks ${ranks} was sent to simplifyPair but does not contain a pair`
-      );
-    };
-    console.log(ranks);
-
-    const pair = pairFinder(ranks);
-    const kickers = ranks.filter((rank) => rank !== pair);
-    return [pair, ...kickers] as number[];
+const analyzePair = (btRank: number): number[] => {
+  let pair: number = 0;
+  let kickers: number[] = [];
+  let position = 0;
+  const stringRep: string = displayFloatAs64Bit(btRank);
+  const l = stringRep.length;
+  while ((pair === 0 || kickers.length < 3) && position < l) {
+    position += 5; // skips the first one.
+    if (stringRep.charAt(position + 2) === "1") {
+      pair = 14 - position / 5;
+    } else if (stringRep.charAt(position + 3) === "1") {
+      kickers.push(14 - position / 5);
+    }
   }
-  throw new Error(`Cannot simplify HandRank type ${handRank}`);
+  return [pair, ...kickers];
+};
+
+// no card has a rank higher than 15 or lower than 0,
+// so if we multiply by 16 * the inverse of it's index,
+// we get unique values where bigger hands always are larger
+// than smaller hands.
+const analysisToInt = (handRank: HandRank, bitCount: float): u16 => {
+  const analyzers: Record<number, (btRank: number) => number[]> = {
+    [HandRank.quads]: analyzeQuads,
+    [HandRank.fullHouse]: analyzeBoat,
+    [HandRank.trips]: analyzeTrips,
+    [HandRank.twoPair]: analyzeTwoPair,
+    [HandRank.pair]: analyzePair,
+  };
+  console.log(handRank, bitCount);
+  const analysis: number[] = analyzers[handRank as number](bitCount);
+  let count = 0;
+  for (let factor = 0, l = analysis.length; factor < l; factor++) {
+    count += analysis[factor] * 16 * (l - factor);
+  }
+  return count;
 };
 
 export const compareHands = (handA: string, handB: string): number => {
@@ -285,15 +354,9 @@ export const compareHands = (handA: string, handB: string): number => {
     return a.btRanks - b.btRanks;
   }
 
-  const simpleA = simplifyComplexHands(a.handRank, aRanks);
-  const simpleB = simplifyComplexHands(b.handRank, bRanks);
-  // we can't compare full houses, quads, etc. by hash, because hands such as "JJJAA" have a
-  // higher hash value than "KKKQQ". Unless someone can think of something clever...
-  for (let i = 0, l = simpleA.length; i < l; i++) {
-    const valueArray = simpleA[i] - simpleB[i];
-    if (valueArray !== 0) {
-      return valueArray;
-    }
-  }
-  return 0;
+  const hexA: u16 = analysisToInt(a.handRank, a.btCount);
+  const hexB: u16 = analysisToInt(b.handRank, b.btCount);
+  console.log({ ...a, hexA });
+  console.log({ ...b, hexB });
+  return hexA - hexB;
 };
