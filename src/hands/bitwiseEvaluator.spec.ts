@@ -171,9 +171,8 @@ describe("rank poker hand", () => {
   });
 });
 
-describe.only("btCountToAnalysis", () => {
+describe("btCountToAnalysis", () => {
   it(`correctly counts`, () => {
-    console.log(displayFloatAs64Bit(2052));
     const quads = "Jh Jc Jd Js 2h";
     const boat = "8h 8c 8d 9s 9h";
     const trips = "Ts Tc Td 4s Ad";
@@ -267,7 +266,7 @@ describe("compareHands", () => {
       }
     }
   });
-  xit(`correctly compares hands of the same rank by their kickers`, () => {
+  it(`correctly compares hands of the same rank by their kickers`, () => {
     const straightFlush = "4s 5s 7s 6s 3s";
     const betterSF = "Qd Jd Td 9d 8d";
     expect(compareHands(straightFlush, betterSF)).toBeLessThan(0);

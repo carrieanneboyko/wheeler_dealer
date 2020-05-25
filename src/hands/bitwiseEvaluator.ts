@@ -45,8 +45,6 @@ export const Suit: Record<string, number> = {
 };
 const WHEEL_HASH = 0x403c; // 0100 0000 0011 1100
 const BROADWAY_HASH = 0x7c00; // 0111 1100 0000 0000
-const { A, K, Q, J, T } = Rank;
-const Rs: number[] = [A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2];
 const displayBits = (bits = 16) => (x: number): string =>
   x
     .toString(2)
@@ -220,9 +218,7 @@ export const btCountToAnalysis = (handRanks: number[]): PairUps => {
   const workspace: PairUps = { quads: [], trips: [], pairs: [], kickers: [] };
   handRanks.sort((a, b) => b - a); //descending order
   const queue = { rank: handRanks[0], count: 1 };
-  console.log(handRanks);
   for (let rank of handRanks.slice(1)) {
-    console.log(JSON.stringify(queue), JSON.stringify(workspace));
     if (queue.rank === rank) {
       queue.count += 1;
     } else {
@@ -232,115 +228,25 @@ export const btCountToAnalysis = (handRanks: number[]): PairUps => {
     }
   }
   workspace[PAIR_TYPES[queue.count - 1]].push(queue.rank);
-  console.log(JSON.stringify(workspace));
   return workspace;
 };
 
-const analyzeQuads = (btCount: number): number[] => {
-  let quads: number = 0;
-  let kicker: number = 0;
-  let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btCount);
-  const l = stringRep.length;
-  while ((quads === 0 || kicker === 0) && position < l) {
-    position += 5; // skips the first one.
-    if (stringRep.charAt(position) === "1") {
-      quads = 14 - position / 5;
-    } else if (stringRep.charAt(position + 3) === "1") {
-      kicker = 14 - position / 5;
-    }
-  }
-  console.log(displayFloatAs64Bit(btCount));
-  console.log([quads, kicker]);
-  return [quads, kicker];
-};
-const analyzeBoat = (btCount: number): number[] => {
-  let trips: number = 0;
-  let pair: number = 0;
-  let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btCount);
-  const l = stringRep.length;
-  while ((trips === 0 || pair === 0) && position < l) {
-    position += 5; // skips the first one.
-    if (stringRep.charAt(position + 1) === "1") {
-      trips = 14 - position / 5;
-    } else if (stringRep.charAt(position + 2) === "1") {
-      pair = 14 - position / 5;
-    }
-  }
-  return [trips, pair];
+const makeCorrectArray: Record<string, (x: PairUps) => number[]> = {
+  quads: (x: PairUps) => x.quads.concat(x.kickers),
+  boat: (x: PairUps) => x.trips.concat(x.pairs),
+  trips: (x: PairUps) => x.trips.concat(x.kickers),
+  pair: (x: PairUps) => x.pairs.concat(x.kickers),
 };
 
-const analyzeTrips = (btCount: number): number[] => {
-  let trips: number = 0;
-  let kickers: number[] = [];
-  let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btCount);
-  const l = stringRep.length;
-  while ((trips === 0 || kickers.length < 2) && position < l) {
-    position += 5; // skips the first one.
-    if (stringRep.charAt(position + 1) === "1") {
-      trips = 14 - position / 5;
-    } else if (stringRep.charAt(position + 3) === "1") {
-      kickers.push(14 - position / 5);
+// positive = a bigger, negative = b bigger, 0 = the same;
+export const compareArrays = (a: number[], b: number[]): number => {
+  for (let i = 0, l = a.length; i < l; i++) {
+    const check = a[i] - b[i];
+    if (check !== 0) {
+      return check;
     }
   }
-  return [trips, ...kickers];
-};
-
-const analyzeTwoPair = (btCount: number): number[] => {
-  let pairs: number[] = [];
-  let kicker: number = 0;
-  let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btCount);
-  const l = stringRep.length;
-  while (pairs.length < 2 && kicker === 0 && position < l) {
-    position += 5; // skips the first one.
-    if (stringRep.charAt(position + 2) === "1") {
-      pairs.push(14 - position / 5);
-    } else if (stringRep.charAt(position + 3) === "1") {
-      kicker = 14 - position / 5;
-    }
-  }
-  return [...pairs, kicker];
-};
-
-const analyzePair = (btCount: number): number[] => {
-  let pair: number = 0;
-  let kickers: number[] = [];
-  let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btCount);
-  const l = stringRep.length;
-  while ((pair === 0 || kickers.length < 3) && position < l) {
-    position += 5; // skips the first one.
-    if (stringRep.charAt(position + 2) === "1") {
-      pair = 14 - position / 5;
-    } else if (stringRep.charAt(position + 3) === "1") {
-      kickers.push(14 - position / 5);
-    }
-  }
-  return [pair, ...kickers];
-};
-
-// no card has a rank higher than 15 or lower than 0,
-// so if we multiply by 16 * the inverse of it's index,
-// we get unique values where bigger hands always are larger
-// than smaller hands.
-const analysisToInt = (handRank: HandRank, bitCount: float): u16 => {
-  const analyzers: Record<number, (btCount: number) => number[]> = {
-    [HandRank.quads]: analyzeQuads,
-    [HandRank.fullHouse]: analyzeBoat,
-    [HandRank.trips]: analyzeTrips,
-    [HandRank.twoPair]: analyzeTwoPair,
-    [HandRank.pair]: analyzePair,
-  };
-  console.log(handRank, bitCount);
-  const analysis: number[] = analyzers[handRank as number](bitCount);
-  let count = 0;
-  for (let factor = 0, l = analysis.length; factor < l; factor++) {
-    count += analysis[factor] * 16 * (l - factor);
-  }
-  return count;
+  return 0;
 };
 
 export const compareHands = (handA: string, handB: string): number => {
@@ -356,36 +262,51 @@ export const compareHands = (handA: string, handB: string): number => {
   if (a.handRank !== b.handRank) {
     return a.handRank - b.handRank;
   }
-  // all rfs tie each other.
-  if (a.handRank === HandRank.royalFlush) {
-    return 0;
-  }
-  // flushes and high cards will always have a higher bitwise value if they win.
-  if (a.handRank === HandRank.flush || a.handRank === HandRank.highCard) {
-    return a.btRanks - b.btRanks;
-  }
-  // so will MOST straight flushes & straights, except wheels/steel wheels.
-  if (
-    a.handRank === HandRank.straightFlush ||
-    a.handRank === HandRank.straight
-  ) {
-    // Wheels are a special case where the bitwise rank of the ace throws
-    // everything off and need to be checked seperately.
-    if (a.btRanks === WHEEL_HASH && b.btRanks === WHEEL_HASH) {
+  // fallthrough deliberate;
+  switch (a.handRank) {
+    case HandRank.royalFlush:
       return 0;
-    }
-    if (a.btRanks === WHEEL_HASH) {
-      return -1;
-    }
-    if (b.btRanks === WHEEL_HASH) {
-      return 1;
-    }
-    return a.btRanks - b.btRanks;
+    case HandRank.straightFlush:
+    case HandRank.straight:
+      // check for wheels, steel wheels, otherwise fallthrough
+      if (a.btRanks === WHEEL_HASH && b.btRanks === WHEEL_HASH) {
+        return 0;
+      }
+      if (a.btRanks === WHEEL_HASH) {
+        return -1;
+      }
+      if (b.btRanks === WHEEL_HASH) {
+        return 1;
+      }
+    // fallthrough deliberate;
+    case HandRank.flush:
+    case HandRank.highCard:
+      return a.btRanks - b.btRanks;
   }
 
-  const hexA: u16 = analysisToInt(a.handRank, a.btCount);
-  const hexB: u16 = analysisToInt(b.handRank, b.btCount);
-  console.log({ ...a, hexA });
-  console.log({ ...b, hexB });
-  return hexA - hexB;
+  const pairUpsA: PairUps = btCountToAnalysis(aRanks);
+  const pairUpsB: PairUps = btCountToAnalysis(bRanks);
+  switch (a.handRank) {
+    case HandRank.quads:
+      return compareArrays(
+        makeCorrectArray.quads(pairUpsA),
+        makeCorrectArray.quads(pairUpsB)
+      );
+    case HandRank.fullHouse:
+      return compareArrays(
+        makeCorrectArray.boat(pairUpsA),
+        makeCorrectArray.boat(pairUpsB)
+      );
+    case HandRank.trips:
+      return compareArrays(
+        makeCorrectArray.trips(pairUpsA),
+        makeCorrectArray.trips(pairUpsB)
+      );
+    default:
+      // two pair, one pair
+      return compareArrays(
+        makeCorrectArray.pair(pairUpsA),
+        makeCorrectArray.pair(pairUpsB)
+      );
+  }
 };
