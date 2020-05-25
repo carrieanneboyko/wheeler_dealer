@@ -21,6 +21,7 @@ enum HandRank {
   straightFlush = 8,
   royalFlush = 9,
 }
+
 export const Rank: Record<string, number> = {
   A: 14, // in binary: 0100 0000 0000 0000
   K: 13, // 0100 0000 0000 0000
@@ -44,7 +45,8 @@ export const Suit: Record<string, number> = {
 };
 const WHEEL_HASH = 0x403c; // 0100 0000 0011 1100
 const BROADWAY_HASH = 0x7c00; // 0111 1100 0000 0000
-
+const { A, K, Q, J, T } = Rank;
+const Rs: number[] = [A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2];
 const displayBits = (bits = 16) => (x: number): string =>
   x
     .toString(2)
@@ -107,7 +109,7 @@ export const countDuplicatesBitwise = (handRanks: number[]): float => {
     i < l;
     i++,
       // offsets for the correct rank. Equal to 1 << handRanks[i]*4, but we can't use bitwise operators on floats.
-      offset = Math.pow(2, handRanks[i] * 4) // maybe we should refactor this somehow, don't like it here inside the for loop.
+      offset = Math.pow(2, handRanks[i] * 4)
   ) {
     // though value is a float, it's bits can still be manipulated via addition.
     // (value/offset) bit shifts the desired nibble to the least significant bits (LSBs)
@@ -206,12 +208,39 @@ export const rankPokerHand = (
  * returns a positive value if A is higher, a negative value if B is higher,
  * and zero if they are the same.
  */
+interface PairUps {
+  quads: number[];
+  trips: number[];
+  pairs: number[];
+  kickers: number[];
+  [key: string]: number[];
+}
+const PAIR_TYPES: string[] = ["kickers", "pairs", "trips", "quads"];
+export const btCountToAnalysis = (handRanks: number[]): PairUps => {
+  const workspace: PairUps = { quads: [], trips: [], pairs: [], kickers: [] };
+  handRanks.sort((a, b) => b - a); //descending order
+  const queue = { rank: handRanks[0], count: 1 };
+  console.log(handRanks);
+  for (let rank of handRanks.slice(1)) {
+    console.log(JSON.stringify(queue), JSON.stringify(workspace));
+    if (queue.rank === rank) {
+      queue.count += 1;
+    } else {
+      workspace[PAIR_TYPES[queue.count - 1]].push(queue.rank);
+      queue.rank = rank;
+      queue.count = 1;
+    }
+  }
+  workspace[PAIR_TYPES[queue.count - 1]].push(queue.rank);
+  console.log(JSON.stringify(workspace));
+  return workspace;
+};
 
-const analyzeQuads = (btRank: number): number[] => {
+const analyzeQuads = (btCount: number): number[] => {
   let quads: number = 0;
   let kicker: number = 0;
   let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btRank);
+  const stringRep: string = displayFloatAs64Bit(btCount);
   const l = stringRep.length;
   while ((quads === 0 || kicker === 0) && position < l) {
     position += 5; // skips the first one.
@@ -221,15 +250,15 @@ const analyzeQuads = (btRank: number): number[] => {
       kicker = 14 - position / 5;
     }
   }
-  console.log(displayFloatAs64Bit(btRank));
+  console.log(displayFloatAs64Bit(btCount));
   console.log([quads, kicker]);
   return [quads, kicker];
 };
-const analyzeBoat = (btRank: number): number[] => {
+const analyzeBoat = (btCount: number): number[] => {
   let trips: number = 0;
   let pair: number = 0;
   let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btRank);
+  const stringRep: string = displayFloatAs64Bit(btCount);
   const l = stringRep.length;
   while ((trips === 0 || pair === 0) && position < l) {
     position += 5; // skips the first one.
@@ -242,11 +271,11 @@ const analyzeBoat = (btRank: number): number[] => {
   return [trips, pair];
 };
 
-const analyzeTrips = (btRank: number): number[] => {
+const analyzeTrips = (btCount: number): number[] => {
   let trips: number = 0;
   let kickers: number[] = [];
   let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btRank);
+  const stringRep: string = displayFloatAs64Bit(btCount);
   const l = stringRep.length;
   while ((trips === 0 || kickers.length < 2) && position < l) {
     position += 5; // skips the first one.
@@ -259,11 +288,11 @@ const analyzeTrips = (btRank: number): number[] => {
   return [trips, ...kickers];
 };
 
-const analyzeTwoPair = (btRank: number): number[] => {
+const analyzeTwoPair = (btCount: number): number[] => {
   let pairs: number[] = [];
   let kicker: number = 0;
   let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btRank);
+  const stringRep: string = displayFloatAs64Bit(btCount);
   const l = stringRep.length;
   while (pairs.length < 2 && kicker === 0 && position < l) {
     position += 5; // skips the first one.
@@ -276,11 +305,11 @@ const analyzeTwoPair = (btRank: number): number[] => {
   return [...pairs, kicker];
 };
 
-const analyzePair = (btRank: number): number[] => {
+const analyzePair = (btCount: number): number[] => {
   let pair: number = 0;
   let kickers: number[] = [];
   let position = 0;
-  const stringRep: string = displayFloatAs64Bit(btRank);
+  const stringRep: string = displayFloatAs64Bit(btCount);
   const l = stringRep.length;
   while ((pair === 0 || kickers.length < 3) && position < l) {
     position += 5; // skips the first one.
@@ -298,7 +327,7 @@ const analyzePair = (btRank: number): number[] => {
 // we get unique values where bigger hands always are larger
 // than smaller hands.
 const analysisToInt = (handRank: HandRank, bitCount: float): u16 => {
-  const analyzers: Record<number, (btRank: number) => number[]> = {
+  const analyzers: Record<number, (btCount: number) => number[]> = {
     [HandRank.quads]: analyzeQuads,
     [HandRank.fullHouse]: analyzeBoat,
     [HandRank.trips]: analyzeTrips,
