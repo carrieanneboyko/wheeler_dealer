@@ -199,7 +199,7 @@ const simplifyComplexHands = (
   handRank: HandRank,
   ranks: number[]
 ): number[] => {
-  ranks.sort((a, b) => a - b); // some hands can only be determined by sorting first.
+  ranks.sort((a, b) => b - a); // some hands can only be determined by sorting first, descending order
   if (handRank === HandRank.quads) {
     const quadVal = ranks[2]; // logically, arr 1, 2, 3 must be 3 of the 4.
     const kickerVal = ranks[0] !== quadVal ? ranks[0] : ranks[4]; // the kicker is either card 1 or card 5.
@@ -236,6 +236,8 @@ const simplifyComplexHands = (
         `Hand ranks ${ranks} was sent to simplifyPair but does not contain a pair`
       );
     };
+    console.log(ranks);
+
     const pair = pairFinder(ranks);
     const kickers = ranks.filter((rank) => rank !== pair);
     return [pair, ...kickers] as number[];

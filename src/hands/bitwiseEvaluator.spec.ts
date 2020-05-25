@@ -194,7 +194,7 @@ describe("compareHands", () => {
     const twoPair = "8s 8d Jc 9s 9d";
     const onePair = "Ts Td As Kd Jd";
     const highCard = "Ks Js 9s 7s 6d";
-    const exhaustive = [
+    const cardOrder = [
       royal,
       straightFlush,
       steelWheel,
@@ -208,36 +208,107 @@ describe("compareHands", () => {
       onePair,
       highCard,
     ];
-    for (let i = 0, l = exhaustive.length; i < l; i++) {
+    for (let i = 0, l = cardOrder.length; i < l; i++) {
       for (let j = 0; j < l; j++) {
         if (i === j) {
-          const shouldBeZero = compareHands(exhaustive[i], exhaustive[j]);
+          const shouldBeZero = compareHands(cardOrder[i], cardOrder[j]);
           if (shouldBeZero !== 0) {
             console.error(
-              `should be zero: ${exhaustive[i]}, ${exhaustive[j]}, got ${shouldBeZero}`
+              `should be zero: ${cardOrder[i]}, ${cardOrder[j]}, got ${shouldBeZero}`
             );
           }
           expect(shouldBeZero).toBe(0);
         }
         if (i < j) {
-          const shouldBePositive = compareHands(exhaustive[i], exhaustive[j]);
+          const shouldBePositive = compareHands(cardOrder[i], cardOrder[j]);
           if (shouldBePositive <= 0) {
             console.error(
-              `should be positive: ${exhaustive[i]}, ${exhaustive[j]}, got ${shouldBePositive}`
+              `should be positive: ${cardOrder[i]}, ${cardOrder[j]}, got ${shouldBePositive}`
             );
           }
           expect(shouldBePositive).toBeGreaterThan(0);
         }
         if (i > j) {
-          const shouldBeNegative = compareHands(exhaustive[i], exhaustive[j]);
+          const shouldBeNegative = compareHands(cardOrder[i], cardOrder[j]);
           if (shouldBeNegative >= 0) {
             console.error(
-              `should be negative: ${exhaustive[i]}, ${exhaustive[j]}, got ${shouldBeNegative}`
+              `should be negative: ${cardOrder[i]}, ${cardOrder[j]}, got ${shouldBeNegative}`
             );
           }
           expect(shouldBeNegative).toBeLessThan(0);
         }
       }
     }
+  });
+  it(`correctly compares hands of the same rank by their kickers`, () => {
+    const straightFlush = "4s 5s 7s 6s 3s";
+    const betterSF = "Qd Jd Td 9d 8d";
+    expect(compareHands(straightFlush, betterSF)).toBeLessThan(0);
+    expect(compareHands(betterSF, straightFlush)).toBeGreaterThan(0);
+    expect(compareHands(betterSF, betterSF)).toBe(0);
+
+    const quads = "Jh Jc Jd Js Ah";
+    const betterQuads = "Kh Kc Kd Ks 2h";
+
+    expect(compareHands(quads, betterQuads)).toBeLessThan(0);
+    expect(compareHands(betterQuads, quads)).toBeGreaterThan(0);
+    expect(compareHands(betterQuads, betterQuads)).toBe(0);
+
+    const boat = "8h 8c 8d 9s 9h";
+    const betterBoat = "7s 7h Th Tc Td";
+
+    expect(compareHands(boat, betterBoat)).toBeLessThan(0);
+    expect(compareHands(betterBoat, boat)).toBeGreaterThan(0);
+    expect(compareHands(betterBoat, betterBoat)).toBe(0);
+
+    const flush = "Ah Kh 9h 3h 2h";
+    const betterflush = "Ah Kh 9h 4h 2h";
+    expect(compareHands(flush, betterflush)).toBeLessThan(0);
+    expect(compareHands(betterflush, flush)).toBeGreaterThan(0);
+    expect(compareHands(betterflush, betterflush)).toBe(0);
+
+    const straight = "4s 5c 7d 6s 3s";
+    const betterstraight = "9s 5c 7d 6s 8s";
+    expect(compareHands(straight, betterstraight)).toBeLessThan(0);
+    expect(compareHands(betterstraight, straight)).toBeGreaterThan(0);
+    expect(compareHands(betterstraight, betterstraight)).toBe(0);
+
+    const trips = "Ts Tc Td 4s Ad";
+    const bettertrips = "Ks Kc Kd 4s Ad";
+    const tripsKicker = "Ts Tc Td 8s Ad";
+    expect(compareHands(trips, bettertrips)).toBeLessThan(0);
+    expect(compareHands(bettertrips, trips)).toBeGreaterThan(0);
+    expect(compareHands(bettertrips, bettertrips)).toBe(0);
+    expect(compareHands(tripsKicker, bettertrips)).toBeLessThan(0);
+    expect(compareHands(tripsKicker, trips)).toBeGreaterThan(0);
+    expect(compareHands(bettertrips, tripsKicker)).toBeGreaterThan(0);
+    expect(compareHands(tripsKicker, bettertrips)).toBeLessThan(0);
+    const twoPair = "8s 8d Jc 9s 9d";
+    const bettertwoPair = "Ts Td Jc 2s 2d";
+    const twoPairKicker = "8s 8d Kc 9s 9d";
+    expect(compareHands(twoPair, bettertwoPair)).toBeLessThan(0);
+    expect(compareHands(bettertwoPair, twoPair)).toBeGreaterThan(0);
+    expect(compareHands(bettertwoPair, bettertwoPair)).toBe(0);
+    expect(compareHands(twoPairKicker, bettertwoPair)).toBeLessThan(0);
+    expect(compareHands(twoPairKicker, twoPair)).toBeGreaterThan(0);
+    expect(compareHands(bettertwoPair, twoPairKicker)).toBeGreaterThan(0);
+    expect(compareHands(twoPairKicker, bettertwoPair)).toBeLessThan(0);
+    const onePair = "Ts Td As Kd Jd";
+    const betteronePair = "As Td As Kd Jd";
+    const onePairKicker = "Ts Td As Kd Qd";
+
+    expect(compareHands(onePair, betteronePair)).toBeLessThan(0);
+    expect(compareHands(betteronePair, onePair)).toBeGreaterThan(0);
+    expect(compareHands(betteronePair, betteronePair)).toBe(0);
+    expect(compareHands(onePairKicker, betteronePair)).toBeLessThan(0);
+    expect(compareHands(onePairKicker, onePair)).toBeGreaterThan(0);
+    expect(compareHands(betteronePair, onePairKicker)).toBeGreaterThan(0);
+    expect(compareHands(onePairKicker, betteronePair)).toBeLessThan(0);
+    const highCard = "Ks Js 9s 7s 6d";
+    const betterhighCard = "As Js 9s 7s 6d";
+
+    expect(compareHands(highCard, betterhighCard)).toBeLessThan(0);
+    expect(compareHands(betterhighCard, highCard)).toBeGreaterThan(0);
+    expect(compareHands(betterhighCard, betterhighCard)).toBe(0);
   });
 });
