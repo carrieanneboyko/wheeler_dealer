@@ -1,6 +1,7 @@
 import { shuffler } from "../shuffler";
 import range from "lodash/range";
 import fs from "fs";
+
 const [A, K, Q, J, T] = [14, 13, 12, 11, 10];
 const Deck = range(52);
 const broadway = {

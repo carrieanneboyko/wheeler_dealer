@@ -1,51 +1,17 @@
 /* Significantly based on https://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math */
 /* but written with variable names to be more readable. */
+import { float, u16, HandRank, HandAnalysis, PairUps } from "../types";
+import {
+  WHEEL_HASH,
+  BROADWAY_HASH,
+  POKER_HASH,
+  Rank,
+  Suit,
+  PAIR_TYPES,
+} from "../constants";
 
-type u16 = number;
-type float = number;
-interface HandAnalysis {
-  handRank: number;
-  english: string;
-  btRanks: number;
-  btCount: number;
-}
-enum HandRank {
-  highCard = 0,
-  pair = 1,
-  twoPair = 2,
-  trips = 3,
-  straight = 4,
-  flush = 5,
-  fullHouse = 6,
-  quads = 7,
-  straightFlush = 8,
-  royalFlush = 9,
-}
-
-export const Rank: Record<string, number> = {
-  A: 14, // in binary: 0100 0000 0000 0000
-  K: 13, // 0100 0000 0000 0000
-  Q: 12,
-  J: 11,
-  T: 10,
-  "9": 9,
-  "8": 8,
-  "7": 7,
-  "6": 6,
-  "5": 5,
-  "4": 4,
-  "3": 3,
-  "2": 2,
-};
-export const Suit: Record<string, number> = {
-  s: 1,
-  c: 2,
-  h: 4,
-  d: 8,
-};
-const WHEEL_HASH = 0x403c; // 0100 0000 0011 1100
-const BROADWAY_HASH = 0x7c00; // 0111 1100 0000 0000
-const displayBits = (bits = 16) => (x: number): string =>
+// used mainly for debugging/testing
+export const displayBits = (bits = 16) => (x: number): string =>
   x
     .toString(2)
     .split("")
@@ -54,9 +20,12 @@ const displayBits = (bits = 16) => (x: number): string =>
     .replace(/(\d{4})/g, "$1 ")
     .replace(/(^\s+|\s+$)/, "");
 
-export const displayIntAs16Bit = displayBits(16);
-export const displayFloatAs64Bit = displayBits(64);
-
+/**
+ * parseHandFromString
+ * @param {string} handNotation - a hand written as a string, such as "Jc Js 8h Kc 3s"
+ * @returns {[[number[], number[]]} - Tuple[0] is an array of the rank values of the hand,
+ *                                    Tuple[1] is an array of the suit values of the hand.
+ */
 export const parseHandFromString = (
   handNotation: string
 ): [number[], number[]] => {
@@ -68,8 +37,9 @@ export const parseHandFromString = (
 
 /**
  * The purpose of this is to record a 1 bit for each rank – duplicates are lost.
+ * It is mainly used to detect if there is a straight in the hand.
  */
-export const countRanksBitwise = (handRanks: number[]): u16 => {
+export const mapRanksToBits = (handRanks: number[]): u16 => {
   let bitValue: u16 = 0;
   for (let card = 0; card < 5; card++) {
     const cardValue: u16 = 1 << handRanks[card];
@@ -93,7 +63,7 @@ export const countRanksBitwise = (handRanks: number[]): u16 => {
  *   A    K    Q    J    T    9    8    7    6    5    4    3    2
  * to so so, we set an "offset" to the nibble of the rank,
  */
-export const countDuplicatesBitwise = (handRanks: number[]): float => {
+export const countDuplicates = (handRanks: number[]): float => {
   let offset: float = 0;
   let value: float = 0;
   /*  A note on this for-loop. 
@@ -130,27 +100,17 @@ export const countDuplicatesBitwise = (handRanks: number[]): float => {
  * lets ignore straights and flushes for now.
  * what's really cool about this is that with a little tweaking, this will also work with 7-card hands.
  */
-
-const POKER_HASH: Record<number | string, [string, HandRank]> = {
-  RF: ["Royal Flush", HandRank.royalFlush],
-  SF: ["Straight Flush", HandRank.straightFlush],
-  1: ["Four of a Kind", HandRank.quads],
-  10: ["Full House", HandRank.fullHouse],
-  F: ["Flush", HandRank.flush],
-  S: ["Straight", HandRank.straight],
-  9: ["Three of a Kind", HandRank.trips],
-  7: ["Two Pair", HandRank.twoPair],
-  6: ["Pair", HandRank.pair],
-  HC: ["High Card", HandRank.highCard],
-};
-
 export const rankPokerHand = (
   ranks: number[],
   suits: number[]
 ): HandAnalysis => {
-  const btRanks = countRanksBitwise(ranks);
-  const btCount = countDuplicatesBitwise(ranks) % 15;
+  const btRanks = mapRanksToBits(ranks);
+  const btCount = countDuplicates(ranks) % 15;
   if (btCount !== 5) {
+    if (!POKER_HASH[btCount]) {
+      console.log(btCount, ranks, suits);
+    }
+    // one pair, two pair, three of a kind, full house, four of a kind
     return {
       handRank: POKER_HASH[btCount][1],
       english: POKER_HASH[btCount][0],
@@ -163,6 +123,7 @@ export const rankPokerHand = (
     btRanks / (btRanks & -btRanks) == 31 || btRanks === WHEEL_HASH; // checks if there are 5 consecutive 1s
   const isFlush = suits[0] === (suits[1] | suits[2] | suits[3] | suits[4]); // are all the same.
   if (isFlush && btRanks === BROADWAY_HASH) {
+    // royal flush
     return {
       handRank: POKER_HASH.RF[1],
       english: POKER_HASH.RF[0],
@@ -171,6 +132,7 @@ export const rankPokerHand = (
     };
   }
   if (isStraight && isFlush) {
+    // straight flush
     return {
       handRank: POKER_HASH.SF[1],
       english: POKER_HASH.SF[0],
@@ -179,6 +141,7 @@ export const rankPokerHand = (
     };
   }
   if (isFlush) {
+    // flush
     return {
       handRank: POKER_HASH.F[1],
       english: POKER_HASH.F[0],
@@ -187,6 +150,7 @@ export const rankPokerHand = (
     };
   }
   if (isStraight) {
+    // straight
     return {
       handRank: POKER_HASH.S[1],
       english: POKER_HASH.S[0],
@@ -194,6 +158,7 @@ export const rankPokerHand = (
       btCount,
     };
   }
+  // high card
   return {
     handRank: POKER_HASH.HC[1],
     english: POKER_HASH.HC[0],
@@ -206,15 +171,8 @@ export const rankPokerHand = (
  * returns a positive value if A is higher, a negative value if B is higher,
  * and zero if they are the same.
  */
-interface PairUps {
-  quads: number[];
-  trips: number[];
-  pairs: number[];
-  kickers: number[];
-  [key: string]: number[];
-}
-const PAIR_TYPES: string[] = ["kickers", "pairs", "trips", "quads"];
-export const btCountToAnalysis = (handRanks: number[]): PairUps => {
+
+export const analyzeKickers = (handRanks: number[]): PairUps => {
   const workspace: PairUps = { quads: [], trips: [], pairs: [], kickers: [] };
   handRanks.sort((a, b) => b - a); //descending order
   const queue = { rank: handRanks[0], count: 1 };
@@ -250,10 +208,6 @@ export const compareArrays = (a: number[], b: number[]): number => {
 };
 
 export const compareHands = (handA: string, handB: string): number => {
-  /**
-   * Returns positive number if hand A is stronger, negative number if hand B is stronger.
-   * Returns 0 on a tie.
-   */
   const [aRanks, aSuits] = parseHandFromString(handA);
   const [bRanks, bSuits] = parseHandFromString(handB);
   const a = rankPokerHand(aRanks, aSuits);
@@ -284,8 +238,8 @@ export const compareHands = (handA: string, handB: string): number => {
       return a.btRanks - b.btRanks;
   }
 
-  const pairUpsA: PairUps = btCountToAnalysis(aRanks);
-  const pairUpsB: PairUps = btCountToAnalysis(bRanks);
+  const pairUpsA: PairUps = analyzeKickers(aRanks);
+  const pairUpsB: PairUps = analyzeKickers(bRanks);
   switch (a.handRank) {
     case HandRank.quads:
       return compareArrays(
@@ -310,3 +264,5 @@ export const compareHands = (handA: string, handB: string): number => {
       );
   }
 };
+
+export default compareHands;

@@ -1,52 +1,51 @@
 import {
-  countRanksBitwise,
-  countDuplicatesBitwise,
+  analyzeKickers,
+  compareHands,
+  countDuplicates,
+  mapRanksToBits,
+  displayBits,
   parseHandFromString,
   rankPokerHand,
-  compareHands,
-  displayFloatAs64Bit,
-  displayIntAs16Bit,
-  Rank,
-  btCountToAnalysis,
 } from "./bitwiseEvaluator";
+import { Rank } from "../constants";
 
 const { A, K, Q, J, T } = Rank;
 
 describe("bitwiseEvaluator", () => {
-  describe("countRanksBitwise()", () => {
+  describe("mapRanksToBits()", () => {
     it("converts hand ranks to bitwise values", () => {
       const broadway = [A, K, Q, J, T];
-      expect(displayIntAs16Bit(countRanksBitwise(broadway))).toBe(
+      expect(displayBits(16)(mapRanksToBits(broadway))).toBe(
         "0111 1100 0000 0000"
       );
       const wheel = [A, 2, 3, 4, 5];
-      expect(displayIntAs16Bit(countRanksBitwise(wheel))).toBe(
+      expect(displayBits(16)(mapRanksToBits(wheel))).toBe(
         "0100 0000 0011 1100"
       );
       const twoPair = [8, 8, J, 9, 9];
-      expect(displayIntAs16Bit(countRanksBitwise(twoPair))).toBe(
+      expect(displayBits(16)(mapRanksToBits(twoPair))).toBe(
         "0000 1011 0000 0000"
       );
     });
   });
-  describe("countDuplicatesBitwise", () => {
+  describe("countDuplicates", () => {
     it("magically counts each rank", () => {
       const broadway = [A, K, Q, J, T];
-      const broadwayNumberValue = countDuplicatesBitwise(broadway);
+      const broadwayNumberValue = countDuplicates(broadway);
       expect(broadwayNumberValue).toBe(76861360339681280);
-      expect(displayFloatAs64Bit(broadwayNumberValue)).toBe(
+      expect(displayBits(64)(broadwayNumberValue)).toBe(
         "0000 0001 0001 0001 0001 0001 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
       );
       const quadKings = [K, K, K, K, T];
-      const quadKingsNumberValue = countDuplicatesBitwise(quadKings);
+      const quadKingsNumberValue = countDuplicates(quadKings);
       expect(quadKingsNumberValue).toBe(67555093922185220);
-      expect(displayFloatAs64Bit(quadKingsNumberValue)).toBe(
+      expect(displayBits(64)(quadKingsNumberValue)).toBe(
         "0000 0000 1111 0000 0000 0001 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
       );
       const twoPair = [8, 8, J, 9, 9];
-      const twoPairNumberValue = countDuplicatesBitwise(twoPair);
+      const twoPairNumberValue = countDuplicates(twoPair);
       expect(twoPairNumberValue).toBe(17811229376512);
-      expect(displayFloatAs64Bit(twoPairNumberValue)).toBe(
+      expect(displayBits(64)(twoPairNumberValue)).toBe(
         "0000 0000 0000 0000 0001 0000 0011 0011 0000 0000 0000 0000 0000 0000 0000 0000"
       );
     });
@@ -171,32 +170,32 @@ describe("rank poker hand", () => {
   });
 });
 
-describe("btCountToAnalysis", () => {
+describe("analyzeKickers", () => {
   it(`correctly counts`, () => {
     const quads = "Jh Jc Jd Js 2h";
     const boat = "8h 8c 8d 9s 9h";
     const trips = "Ts Tc Td 4s Ad";
     const twoPair = "8s 8d Jc 9s 9d";
     const onePair = "Ts Td As Kd Jd";
-    const qJJJJ2 = btCountToAnalysis(parseHandFromString(quads)[0]);
+    const qJJJJ2 = analyzeKickers(parseHandFromString(quads)[0]);
     expect(qJJJJ2).toEqual({ trips: [], pairs: [], quads: [J], kickers: [2] });
-    const b88899 = btCountToAnalysis(parseHandFromString(boat)[0]);
+    const b88899 = analyzeKickers(parseHandFromString(boat)[0]);
     expect(b88899).toEqual({ trips: [8], pairs: [9], quads: [], kickers: [] });
-    const tTTT4A = btCountToAnalysis(parseHandFromString(trips)[0]);
+    const tTTT4A = analyzeKickers(parseHandFromString(trips)[0]);
     expect(tTTT4A).toEqual({
       trips: [T],
       pairs: [],
       quads: [],
       kickers: [A, 4],
     });
-    const tP9988J = btCountToAnalysis(parseHandFromString(twoPair)[0]);
+    const tP9988J = analyzeKickers(parseHandFromString(twoPair)[0]);
     expect(tP9988J).toEqual({
       trips: [],
       pairs: [9, 8],
       quads: [],
       kickers: [J],
     });
-    const pTTAKJ = btCountToAnalysis(parseHandFromString(onePair)[0]);
+    const pTTAKJ = analyzeKickers(parseHandFromString(onePair)[0]);
     expect(pTTAKJ).toEqual({
       trips: [],
       pairs: [T],
