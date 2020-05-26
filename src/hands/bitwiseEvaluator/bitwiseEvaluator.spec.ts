@@ -4,9 +4,9 @@ import {
   countDuplicates,
   mapRanksToBits,
   displayBits,
-  parseHandFromString,
   rankPokerHand,
 } from "./bitwiseEvaluator";
+import parseHandFromString from "../parseHandFromString";
 import { Rank } from "../constants";
 
 const { A, K, Q, J, T } = Rank;

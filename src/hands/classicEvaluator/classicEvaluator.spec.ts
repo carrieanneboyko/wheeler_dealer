@@ -1,8 +1,4 @@
-import {
-  compareHands,
-  parseHandFromString,
-  getHandDetails,
-} from "./classicEvaluator";
+import { compareHands, getHandDetails } from "./classicEvaluator";
 import { Rank } from "../constants";
 
 const { A, K, Q, J, T } = Rank;

@@ -9,6 +9,7 @@ import {
   Suit,
   PAIR_TYPES,
 } from "../constants";
+import parseHandFromString from "../parseHandFromString";
 
 // used mainly for debugging/testing
 export const displayBits = (bits = 16) => (x: number): string =>
@@ -19,21 +20,6 @@ export const displayBits = (bits = 16) => (x: number): string =>
     .padStart(bits, "0")
     .replace(/(\d{4})/g, "$1 ")
     .replace(/(^\s+|\s+$)/, "");
-
-/**
- * parseHandFromString
- * @param {string} handNotation - a hand written as a string, such as "Jc Js 8h Kc 3s"
- * @returns {[[number[], number[]]} - Tuple[0] is an array of the rank values of the hand,
- *                                    Tuple[1] is an array of the suit values of the hand.
- */
-export const parseHandFromString = (
-  handNotation: string
-): [number[], number[]] => {
-  const cards = handNotation.trim().split(" ");
-  const ranks = cards.map((c) => Rank[c.charAt(0)]);
-  const suits = cards.map((c) => Suit[c.charAt(1).toLowerCase()]);
-  return [ranks, suits];
-};
 
 /**
  * The purpose of this is to record a 1 bit for each rank – duplicates are lost.

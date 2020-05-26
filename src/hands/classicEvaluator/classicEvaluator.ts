@@ -2,33 +2,16 @@ import { Rank, Suit, PAIR_TYPES } from "../constants";
 import { PairUps, HandRank, ClassicAnalysis } from "../types";
 import isEqual from "lodash/isEqual";
 const { A, K } = Rank;
-const WHEEL_ARRAY: number[] = [A, 5, 4, 3, 2];
-
-export const parseHandFromString = (
-  handNotation: string
-): [number[], number[]] => {
-  const cards = handNotation.trim().split(" ");
-  const ranks = cards.map((c) => Rank[c.charAt(0)]);
-  const suits = cards.map((c) => Suit[c.charAt(1).toLowerCase()]);
-  return [ranks, suits];
-};
+import parseHandFromString from "../parseHandFromString";
 
 // in-memory cache, so we don't sort more than once for a given set.
-const sortRanks = (() => {
-  const cache: Record<string, number[]> = {};
-  return (ranks: number[]): number[] => {
-    const str = JSON.stringify(ranks);
-    if (cache[str] === undefined) {
-      const sorted = ranks.sort((a, b) => b - a);
-      if (isEqual(sorted, [A, 5, 4, 3, 2])) {
-        cache[str] = [5, 4, 3, 2, A];
-      } else {
-        cache[str] = sorted;
-      }
-    }
-    return cache[str];
-  };
-})();
+const sortRanks = (ranks: number[]) => {
+  const sorted = ranks.sort((a, b) => b - a);
+  if (isEqual(sorted, [A, 5, 4, 3, 2])) {
+    return [5, 4, 3, 2, A];
+  }
+  return sorted;
+};
 
 const isInSequence = (ranks: number[]): boolean => {
   for (let i = 1, l = ranks.length; i < l; i++) {
@@ -120,7 +103,11 @@ const getHandRanking = (
     return [HandRank.fullHouse, makeCorrectArray.boat(pairUps)];
   }
   throw new Error(
-    `This is impossible; ${JSON.stringify(pairUps)} is not a valid poker hand`
+    `This is impossible; ${JSON.stringify(
+      pairUps
+    )} is not a valid poker hand, check ${JSON.stringify(
+      ranks
+    )} ranks and ${JSON.stringify(suits)} suits`
   );
 };
 

@@ -1,4 +1,4 @@
-const nPickKCombinations = (n: number, k: number): number[][] => {
+const nPickK = (n: number, k: number): number[][] => {
   let result: number[][] = [];
   let stack: number[] = [];
   const combine = (currentNumber: number): void => {
@@ -20,4 +20,4 @@ const nPickKCombinations = (n: number, k: number): number[][] => {
   return result;
 };
 
-export default nPickKCombinations;
+export default nPickK;
