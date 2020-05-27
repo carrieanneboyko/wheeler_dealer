@@ -93,9 +93,6 @@ export const rankPokerHand = (
   const btRanks = mapRanksToBits(ranks);
   const btCount = countDuplicates(ranks) % 15;
   if (btCount !== 5) {
-    if (!POKER_HASH[btCount]) {
-      console.log(btCount, ranks, suits);
-    }
     // one pair, two pair, three of a kind, full house, four of a kind
     return {
       handRank: POKER_HASH[btCount][1],

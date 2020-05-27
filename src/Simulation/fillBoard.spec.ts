@@ -1,4 +1,5 @@
-import { findRemainingCardsInDeck } from "./fillBoard";
+import fillBoardAndEvaluate, { findRemainingCardsInDeck } from "./fillBoard";
+import { performance } from "perf_hooks";
 
 describe("fillBoard", () => {
   describe("findRemainingCardsInDeck", () => {
@@ -54,6 +55,44 @@ describe("fillBoard", () => {
       ]);
       const test2 = findRemainingCardsInDeck(deadHands);
       expect(test2).toHaveLength(52 - 6);
+    });
+  });
+  describe("Simulate Holdem Hand, Amarillo Slim", () => {
+    it("simulates a hand (classic evaluation)", () => {
+      const hand1 = "Js Ts";
+      const hand2 = "Ac Kd";
+      const hand3 = "4h 4d";
+      console.log("starting timer: Classic Evaluation");
+      const start = performance.now();
+      const result = fillBoardAndEvaluate([hand1, hand2, hand3]);
+      console.log(
+        `Classic Evaluation time: ${(performance.now() - start) / 1000}seconds`
+      );
+      expect(result).toEqual({
+        count: 1370754,
+        players: [0.3576000264574418, 0.3468971578172649, 0.2955028157252463],
+      });
+      expect(result.players.reduce((pv, cv) => pv + cv)).toBeCloseTo(1);
+    });
+    it("simulates a hand (bitwise evaluation)", () => {
+      const hand1 = "Js Ts";
+      const hand2 = "Ac Kd";
+      const hand3 = "4h 4d";
+      console.log("starting timer: Bitwise Evaluation");
+      const start = performance.now();
+      const result = fillBoardAndEvaluate(
+        [hand1, hand2, hand3],
+        undefined,
+        true
+      );
+      console.log(
+        `Bitwise Evaluation time: ${(performance.now() - start) / 1000}seconds`
+      );
+      expect(result).toEqual({
+        count: 1370754,
+        players: [0.3576000264574418, 0.3468971578172649, 0.2955028157252463],
+      });
+      expect(result.players.reduce((pv, cv) => pv + cv)).toBeCloseTo(1);
     });
   });
 });
