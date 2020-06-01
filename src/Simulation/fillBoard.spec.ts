@@ -58,7 +58,7 @@ describe("fillBoard", () => {
     });
   });
   describe("Simulate Holdem Hand, Amarillo Slim", () => {
-    it("simulates a hand (classic evaluation)", () => {
+    xit("simulates a hand (classic evaluation)", () => {
       const hand1 = "Js Ts";
       const hand2 = "Ac Kd";
       const hand3 = "4h 4d";
