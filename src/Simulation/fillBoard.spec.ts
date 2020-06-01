@@ -57,8 +57,9 @@ describe("fillBoard", () => {
       expect(test2).toHaveLength(52 - 6);
     });
   });
-  describe("Simulate Holdem Hand, Amarillo Slim", () => {
-    xit("simulates a hand (classic evaluation)", () => {
+  // THESE TESTS TAKE ABOUT 500 seconds each
+  xdescribe("Simulate Holdem Hand, Amarillo Slim", () => {
+    it("simulates a hand (classic evaluation)", () => {
       const hand1 = "Js Ts";
       const hand2 = "Ac Kd";
       const hand3 = "4h 4d";

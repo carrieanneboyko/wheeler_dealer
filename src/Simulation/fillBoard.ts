@@ -62,11 +62,22 @@ export const fillBoardAndEvaluate = (
   if (cardsToGrab === 0) {
     throw new Error("TODO: Implement for only one possibility");
   }
+
   const permutations: number[][] = nPickK(
     remainingCardsInDeck.length,
     cardsToGrab
   );
+  const startTime = Date.now();
+  console.log("got number of perms:", permutations.length);
   for (const perm of permutations) {
+    if (tally.count % Math.floor(permutations.length / 100) === 0) {
+      console.log(
+        `Perms: ${tally.count}, ${(
+          (tally.count * 100) /
+          permutations.length
+        ).toFixed(2)}%, @ ${Date.now() - startTime}ms`
+      );
+    }
     tally.count += 1;
     const permCards = perm.map((index) => remainingCardsInDeck[index]);
     const bestPlayerHands = getBestPlayerHandsOfSeven(
