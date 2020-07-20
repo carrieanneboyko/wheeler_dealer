@@ -6,7 +6,7 @@
   "author": "brianboyko <brian.boyko@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "typescript": "^3.9.3"
   },
   "devDependencies": {
